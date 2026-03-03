@@ -1,0 +1,17 @@
+# Android 无关文件（不上传）
+.gradle/
+.idea/
+.svn/
+build/
+local.properties
+*.iml
+import-summary.txt
+gapk.jks
+DataCollectionLib/
+Sdk/
+BarcodeExample.iml
+gradle/
+gradlew
+gradlew.bat
+settings.gradle
+build.gradle
