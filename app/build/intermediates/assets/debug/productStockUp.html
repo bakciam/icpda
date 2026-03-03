@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>成品备货</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app">
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-cell title="仓库名称" v-model="warehouseName" />
+			</div>
+			<div>
+				<van-field v-model="orderCode" label="发货单" input-align="right" placeholder="请输入或扫描发货单"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="boxCode" label="箱号" input-align="right" placeholder="请输入或扫描箱号"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+		</div>
+		<div>
+			<van-cell-group title="箱号清单">
+				<div v-for="(item,index) in boxs">
+					<van-cell :title="item.boxCode" center>
+						<template #right-icon v-if="item.hasScan">
+							<span class="custom-rigth-icon">已核对</span>
+							<van-icon name="success" class="success-icon" color="#1989fa" />
+						</template>
+					</van-cell>
+				</div>
+			</van-cell-group>
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">{{btnName}}</van-button>
+				</van-col>
+			</van-row>
+		</div>
+
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showScan: false,
+				btnName: '确认',
+				title: '成品备货',
+
+				warehouseCode: '',
+				warehouseName: '',
+				orderCode: '',//单号
+				boxCode: '',//箱号
+				boxs: [],//所有箱号
+				errorMsg1: "",
+				errorMsg2: "",
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+
+			},
+			created() {
+
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+
+				//出入库提交
+				save: function () {
+					var self = this;
+					if (self.orderCode == undefined || self.orderCode == '') {
+						self.$toast('请先输入或扫描入库单');
+						return;
+					}
+
+					for (var index = 0; index < self.boxs.length; index++) {
+						const element = self.boxs[index];
+						if (element.hasScan == false) {
+							self.$toast('请核对所有箱号');
+							return;
+						}
+					}
+
+					var param = {
+						ordercode: self.orderCode,
+						modifyUser: localStorage.userCode,
+						modifyUserName: localStorage.userName
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then(function () {
+						$.ajax({
+							url: serviceUrl + '/api/pda/confirmproductoutorderinfo',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.orderCode = '';
+										self.errorMsg1 = '';
+										self.boxCode = '';
+										self.warehouseCode = '';
+										self.warehouseName = '';
+										self.boxs = [];
+										self.$refs.filed1.focus();
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.warehouseCode = '';
+						self.warehouseName = '';
+						self.errorMsg1 = '';
+						self.errorMsg2 = '';
+						self.orderCode = '';
+						self.boxCode = '';
+						self.boxs = [];
+						self.$refs.filed1.focus();
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //入库单			
+							if (this.orderCode) {
+								self.boxs = []
+								$.ajax({
+									url: serviceUrl + '/api/pda/getproductoutorderinfo',
+									type: 'GET',
+									data: {
+										orderCode: self.orderCode
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.errorMsg1 = ''
+											self.warehouseName = res.data.warehousename;
+											if (res.data.boxcodes) {
+												var list = res.data.boxcodes;
+												for (var i = 0; i < list.length; i++) {
+													const element = list[i];
+													var obj = {
+														boxCode: element,
+														hasScan: false
+													}
+													self.boxs.push(obj)
+												}
+											}
+											self.onFocus(type);
+										} else {
+											self.errorMsg1 = res.msg ? res.msg : '发货单获取失败'
+										}
+									},
+									error: function () {
+										self.errorMsg1 = res.msg ? res.msg : '网络连接异常'
+									}
+								})
+							}
+							break;
+						case 2: //箱号	
+							if (self.orderCode == undefined || self.orderCode == '') {
+								self.$toast('请先输入或扫描发货单');
+								self.boxCode = '';
+								return;
+							}
+							var list = self.boxs;
+							var isExist = false;
+							for (let i = 0; i < list.length; i++) {
+								const element = list[i];
+								if (element.boxCode == self.boxCode) {
+									element.hasScan = true;
+									isExist = true;
+								}
+							}
+							if (isExist == false) {
+								self.$toast('当前扫描箱号不在箱号清单中！');
+							}
+							self.boxCode = '';
+							self.$refs.filed2.focus();
+							break;
+						default:
+							break;
+					}
+				},
+
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						// self.$refs.filed2.blur();
+					}
+				},
+
+
+			}
+		})
+	</script>
+</body>
+
+</html>

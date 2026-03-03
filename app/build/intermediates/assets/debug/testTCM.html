@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC首检</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+		<link rel="stylesheet" href="styles/style.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+
+
+			<div>
+				<van-field v-model="time" label="日期时间" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div>
+
+				<van-field label="班别" input-align="right">
+					<template #input>
+						<van-radio-group v-model="clazz" direction="horizontal">
+							<van-radio name="A">A</van-radio>
+							<van-radio name="B">B</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div class='no'>
+				<van-field v-model="qc" label="操作员姓名" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div id='no'>
+				<van-field v-model="locationCode" label="机台号" input-align="right" placeholder="请输入或扫描设备" ref="filed0"
+					autofocus required :error-message="errorMsg1" error-message-align="right"
+					@keyup.enter.native="onEnter(1)" />
+			</div>
+			<div>
+				<van-field v-model="materialContent" label="工卡号" input-align="right" placeholder="请输入或扫描工卡号"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" autofocus />
+			</div>
+			<div>
+				<van-collapse v-model="activeNames">
+					<van-collapse-item title="工卡信息" name="1">
+						<div>
+							<van-field v-model="startTime" label="开始时间" input-align="right" placeholder="请输入"
+								ref="filed1" required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+						<div>
+							<van-field v-model="endTime" label="结束时间" input-align="right" placeholder="请输入" ref="filed1"
+								required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+						<div>
+							<van-field v-model="partname" label="成品名称" input-align="right" placeholder="请输入"
+								ref="filed1" required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+						<div>
+							<van-field v-model="testContent" label="刻字内容" input-align="right" placeholder="请输入" required
+								:error-message="errorMsg1" error-message-align="right" />
+						</div>
+
+						<div >
+
+							<van-field label="刻字内容确认" input-align="right">
+								<template #input>
+									<van-radio-group v-model="printConfirmation" direction="horizontal">
+										<van-radio name="OK">OK</van-radio>
+										<van-radio name="NG">NG</van-radio>
+									</van-radio-group>
+								</template>
+							</van-field>
+						</div>
+						<div>
+							<van-field v-model="additionalIngredients" label="附加余料" input-align="right"
+								placeholder="请输入" ref="filed1" required :error-message="errorMsg1"
+								error-message-align="right" />
+						</div>
+
+						<div>
+							<van-field v-model="fromCard" label="来源卡号" input-align="right" placeholder="请输入"
+								ref="filed1" required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+
+						<div>
+							<van-field v-model="quality" label="产出" input-align="right" placeholder="请输入" ref="filed1"
+								required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+					</van-collapse-item>
+				</van-collapse>
+			</div>
+
+
+			<div class='no'>
+				<van-field v-model="totalBatches" label="批次总数" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div class='no'>
+				<van-field v-model="electricalYield" label="电性良率" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div class='no'>
+
+				<van-field label="首盘自检" input-align="right">
+					<template #input>
+						<van-radio-group v-model="firstSelfCheck" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div class='no'>
+
+				<van-field label="尾盘自检" input-align="right">
+					<template #input>
+						<van-radio-group v-model="endSelfCheck" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div class='no'>
+
+				<van-field label="测试程序确认" input-align="right">
+					<template #input>
+						<van-radio-group v-model="testConfirmation" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+
+			<div class='no'>
+				<van-field v-model="confirmSpot" label="临机确认" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<!-- 盖带批次 -->
+			<div class='no'>
+				<van-field v-model="coverBatches" label="盖带批次" input-align="right" placeholder="请输入" ref="filed1"
+					:error-message="coverErrorMsg" error-message-align="right"
+					@keyup.enter="handleBatchEnter('cover')" />
+			</div>
+
+			<!-- 载带批次 -->
+			<div class='no'>
+				<van-field v-model="carrierBatch" label="载带批次" input-align="right" placeholder="请输入"
+					:error-message="carrierErrorMsg" error-message-align="right"
+					@keyup.enter="handleBatchEnter('carrier')" />
+			</div>
+			<div class='no'>
+
+				<van-field label="轨道是否清洁" input-align="right">
+					<template #input>
+						<van-radio-group v-model="isClean" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div class='no'>
+				<!-- 	<van-field v-model="selfInspectionCompression" label="压合自检" input-align="right" placeholder="请输入"
+					ref="filed1" :error-message="errorMsg1" error-message-align="right" /> -->
+				<van-field label="压合自检" input-align="right">
+					<template #input>
+						<van-radio-group v-model="selfInspectionCompression" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<!-- <div class='no'>
+				<van-field v-model="maintenance" label="维修" input-align="right" placeholder="请输入" ref="filed1"
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="changeMachine" label="改机" input-align="right" placeholder="请输入" ref="filed1"
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div class='no'>
+				<van-field v-model="toExpected" label="待料" input-align="right" placeholder="请输入" ref="filed1"
+					:error-message="errorMsg1" error-message-align="right" />
+			</div> -->
+			<div class='no'>
+				<van-field v-model="Remarks" label="备注" input-align="right" placeholder="请输入" :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					activeNames: ['1'],
+					type: '', //物料类型
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					errorMsg1: "",
+					errorMsg2: "",
+
+					qc: '',
+					qcCode: '',
+					locationCode: '', //货架
+					materialContent: '', //条码内容
+					pModel: "",
+					time: "",
+
+					tag: "",
+					clazz: '',
+
+					Remarks: '',
+
+					testYield: '',
+					PoorContact: '',
+					testContent: '',
+					carrierManufacturer: '',
+					realCarryColor: '',
+					FullPlateQuantity: '',
+					FrontSpace: '',
+					BackSpace: '',
+					ProblemDescription: '',
+					CorrectiveAction: '',
+					startTime: '',
+					endTime: '',
+					partname: '',
+					additionalIngredients: '',
+					fromCard: '',
+					quality: '',
+					totalBatches: '',
+					electricalYield: '',
+					firstSelfCheck: '',
+					endSelfCheck: '',
+					testConfirmation: '',
+					printConfirmation: '',
+					confirmSpot: '',
+					coverBatches: '',
+					carrierBatch: '',
+					isClean: '',
+					selfInspectionCompression: '',
+					coverBatches: '',
+					maintenance: '',
+					changeMachine: '',
+					toExpected: '',
+					coverErrorMsg: '',
+					carrierErrorMsg: ''
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.qc = localStorage.userName;
+
+				},
+				created() {
+
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+
+
+					this.title = 'IC测试TCM表'
+
+					if (locationCode != null) {
+						this.materialContent = materialContent
+						this.locationCode = locationCode
+					}
+
+				},
+				methods: {
+					handleBatchEnter(type) {
+						// 根据类型获取对应的数据和错误信息字段
+						const batchData = type === 'cover' ? this.coverBatches : this.carrierBatch;
+						const errorField = type === 'cover' ? 'coverErrorMsg' : 'carrierErrorMsg';
+
+						// 清空错误信息
+						this[errorField] = '';
+
+						// 验证是否为空
+						if (!batchData.trim()) {
+							this[errorField] = `请输入${type === 'cover' ? '盖带' : '载带'}批次`;
+							return;
+						}
+
+						// 分割并提取中间部分
+						const parts = batchData.split('*');
+
+						if (parts.length >= 3) {
+							// 更新对应的数据字段
+							if (type === 'cover') {
+								this.coverBatches = parts[2];
+							} else {
+								this.carrierBatch = parts[2];
+							}
+						} else {
+							this[errorField] = '格式不正确，请使用包含*分隔符的正确格式';
+						}
+					},
+					handleCoverBatchesEnter() {
+						this.errorMsg1 = '';
+
+						if (!this.coverBatches.trim()) {
+							this.errorMsg1 = '请输入盖带批次';
+							return;
+						}
+
+						const parts = this.coverBatches.split('*');
+
+						if (parts.length >= 3) {
+							// 提取到目标值后，用该值更新coverBatches
+							this.coverBatches = parts[2];
+						} else {
+							this.errorMsg1 = '格式不正确，请使用包含*分隔符的正确格式';
+						}
+					},
+					istestDataOfRange(value) {
+						return value !== '' && (parseFloat(value) > 30 || parseFloat(value) < 0);
+					},
+					onConfirmInspectionType(value) {
+						this.inspectionType = value;
+					},
+					onCancelInspectionType() {
+						this.inspectionType = '';
+					},
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+						var param = {
+							clazz: self.clazz,
+							Verifier: self.qc,
+							locationCode: self.locationCode,
+							cardID: self.materialContent,
+							startTime: self.startTime,
+							endTime: self.endTime,
+							partname: self.partname,
+							testContent: self.testContent,
+							additionalIngredients: self.additionalIngredients,
+							fromCard: self.fromCard,
+							quality: self.quality,
+							totalBatches: self.totalBatches,
+							electricalYield: self.electricalYield,
+							firstSelfCheck: self.firstSelfCheck,
+							endSelfCheck: self.endSelfCheck,
+							testConfirmation: self.testConfirmation,
+							printConfirmation: self.printConfirmation,
+							confirmSpot: self.confirmSpot,
+							coverBatches: self.coverBatches,
+							carrierBatch: self.carrierBatch,
+							isClean: self.isClean,
+							selfInspectionCompression: self.selfInspectionCompression,
+							maintenance: self.maintenance,
+							changeMachine: self.changeMachine,
+							toExpected: self.toExpected,
+							Remarks: self.Remarks,
+							time: self.time
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/postTestTCM',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+
+											// 重置所有属性
+											self.getNowTime();
+
+
+
+										})
+									} else {
+										self.$toast(res.msg);
+
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+
+							// 重置所有属性
+
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: {
+								self.onFocus(type);
+								break;
+							}
+							case 1: //工卡			
+								self.onFocus(type);
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+							case 4: //缺陷
+
+								var isExist = false;
+								for (var index = 0; index < self.reasons.length; index++) {
+									var element = self.reasons[index];
+									if (self.txtReason == element) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.reasons.push(self.txtReason)
+								} else {
+									self.$toast('已扫描过相同缺陷');
+								}
+								self.txtReason = ''
+
+								break;
+						}
+					},
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								equipmentCode: self.locationCode,
+								type: 72,
+								kind: 1
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg1 = ''
+									self.$refs.filed2.focus();
+									// self.locationCode = res.data.EquipmentCode;
+									self.partname = res.data.cardInfo.PartName;
+									self.startTime = res.data.operationRecord1[0].OperationTime
+									if (res.data.operationRecord2 != null)
+										self.endTime = res.data.operationRecord2[0].OperationTime
+									self.testContent = res.data.cardInfo.MarkingContent;
+									self.package = res.data.PackageName;
+									self.quality = res.data.cardInfo.CurrentQuantity;
+
+								} else {
+									self.$toast(res.msg);
+
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+						self.reasons.splice(index, 1)
+					},
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+</html>

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>晶圆上架</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app">
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-cell required title="仓库名称" is-link v-model="warehouseName" @click="showPopup" />
+			</div>
+			<div>
+				<van-field v-model="locationCode" label="移至货架" input-align="right" placeholder="请输入或扫描货架"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="materialContent" :label="materialLabel" input-align="right" :placeholder="materialPlaceholder"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+		</div>
+		<van-cell-group :title="contentTitle">
+				<van-collapse v-model="activeNames">
+				  <van-collapse-item v-for="(item,index) in contentInfo" :title="(index+1)+'、型号：'+item.pModel" :name="index">
+					<template #title>
+						<van-row>
+						 <van-col span="16">{{(index+1)}}、型号：{{item.pModel}}</van-col>
+						 <van-col span="8" style="text-align: right;">
+						  <van-button @click.stop="deletItem(index)" size="small" type="danger">删除</van-button>
+						 </van-col>
+						</van-row>
+						</template>
+				  	<!--成品上架-->
+				  	<div v-if="warehousetype==1&&type==1">
+						<div><van-cell title="箱号" v-model="item.boxcode" /></div>
+					  	<div><van-cell title="客户代码" v-model="item.customerCode" /></div>
+						<div><van-cell title="封装形式" v-model="item.packageName" /></div>
+						<div><van-cell title="产品型号" v-model="item.pModel" /></div>
+						<div><van-cell title="产品数量" v-model="item.qty" /></div>
+					</div>
+					<!--晶圆上架-->
+					<div v-if="warehousetype==1&&type==2">
+					  	<div><van-cell title="晶圆型号" v-model="item.pModel" /></div>
+						<div><van-cell title="晶圆批次" v-model="item.batchNumber" /></div>
+						<div><van-cell title="晶圆数量" v-model="item.qty" /></div>
+						<div><van-cell title="客户代码" v-model="item.customerCode" /></div>
+					</div>
+					<!--线边仓晶圆-->
+					<div v-if="warehousetype==2&&type==1">
+							<div><van-cell title="晶圆型号" v-model="item.pModel" /></div>
+							<div><van-cell title="晶圆批次" v-model="item.batchNumber" /></div>
+							<div><van-cell title="晶圆数量" v-model="item.qty" /></div>
+							<div><van-cell title="客户代码" v-model="item.customerCode" /></div>
+					</div> 
+					<!--线边仓框架-->
+					<div v-if="warehousetype==2&&type==2">
+						<div><van-cell title="料号" v-model="item.partNumber" /></div>
+							<div><van-cell title="型号" v-model="item.pModel" /></div>
+							<div><van-cell title="数量" v-model="item.qty" /></div>
+					</div>
+					<!--线边仓物料-->
+					<div v-if="warehousetype==2&&type==3">
+						<div><van-cell title="料号" v-model="item.partNumber" /></div>
+							<div><van-cell title="型号" v-model="item.pModel" /></div>
+							<div><van-cell title="数量" v-model="item.qty" /></div>
+					</div>
+					<!--线边仓测试-->
+					<div v-if="warehousetype==2&&type==4">
+							<div><van-cell title="卡号" v-model="item.cardID" /></div>
+							<div><van-cell title="客户代码" v-model="item.customerCode" /></div>
+							<div><van-cell title="封装型式" v-model="item.packageName" /></div>
+							<div><van-cell title="产品型号" v-model="item.pModel" /></div>
+							<div><van-cell title="晶圆批次" v-model="item.dieBatch" /></div>
+							<div><van-cell title="数量" v-model="item.currentQuantity" /></div>		
+					</div>
+				  </van-collapse-item>
+				</van-collapse>
+			</van-cell-group>
+		
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">{{btnName}}</van-button>
+				</van-col>
+			</van-row>
+		</div>
+		<van-popup v-model="showPicker" position="bottom">
+			<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup"
+				value-key="storeName" />
+		</van-popup>
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				type:'',//物料类型
+				warehousetype:'',//仓库类型：1成品仓库  2线边仓仓库
+				showScan: false,
+				btnName: '确认',
+				title: '晶圆上架',
+				contentTitle:'',
+				warehousecode: '',
+				warehouseName: '请选择',
+				locationCode: '',//货架
+				materialContent: '',//条码内容
+				contentInfo:[],
+				errorMsg1: "",
+				errorMsg2: "",
+				columns: [],
+				showPicker: false,
+				activeNames:["0"]
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+
+			},
+			created() {
+				var type = getQueryVariable('type');//线边仓库类型或仓库类型
+				var warehousetype =  getQueryVariable('warehousetype');//1成品仓库  2线边仓仓库
+					this.type = type ? type : '1';
+					this.warehousetype = warehousetype ? warehousetype : '1';
+					if(this.warehousetype == 1&&this.type==1){
+						this.contentTitle="箱号内容"
+						this.title = '成品货架调整'
+						this.materialLabel = '箱号';
+						this.materialPlaceholder = '请输入或扫描箱号';
+						
+					}else if(this.warehousetype == 1&&this.type==2){
+						this.contentTitle="晶圆内容"
+						this.title = '晶圆货架调整'
+						this.materialLabel = '晶圆二维码';
+						this.materialPlaceholder = '请输入或扫描晶圆二维码';
+						
+					}else if(this.warehousetype == 2&&this.type==1){
+						this.contentTitle="晶圆内容"
+						this.title = '晶圆货架调整'
+						this.materialLabel = '晶圆二维码';
+						this.materialPlaceholder = '请输入或扫描晶圆二维码';
+						
+					}else if(this.warehousetype == 2&&this.type==2){
+						this.contentTitle="框架料号内容"
+						this.title = '框架货架调整';
+						this.materialLabel = '框架料号';
+						this.materialPlaceholder = '请输入或扫描框架料号';
+						
+					}else if(this.warehousetype == 2&&this.type==3){
+						this.contentTitle="物料内容"
+						this.title = '物料货架调整';
+						this.materialLabel = '物料编码';
+						this.materialPlaceholder = '请输入或扫描物料编码';
+						
+					}else if(this.warehousetype == 2&&this.type==4){
+						this.contentTitle="卡号内容"
+						this.title = '测试货架调整';
+						this.materialLabel = '工卡号';
+						this.materialPlaceholder = '请输入或扫描工卡号';
+						
+					}
+					if(this.warehousetype ==1){
+						this.querystores()
+					}
+					if(this.warehousetype ==2){
+						this.querylinestores()
+					}				
+			},
+			methods: {
+				showPopup() {
+					this.showPicker = true;
+				},
+				//获取成品仓库接口
+				querystores: function () {
+					var self = this;
+					$.ajax({
+						url: serviceUrl + '/api/pda/querystores',
+						type: 'GET',
+						data: {
+							warehousetype:self.type,//1--成品仓 2--晶圆仓
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.columns = res.data;
+
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				//获取线边仓仓库接口
+				querylinestores: function () { //获取仓库列表
+					var self = this;
+					$.ajax({
+						url: serviceUrl + '/api/pda/querylinestores',
+						type: 'GET',
+						data: {
+							warehousetype:self.type
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.columns = res.data;
+
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+
+				//出入库提交
+				save: function () {
+					var self = this;
+					if(this.warehousecode==undefined||this.warehousecode==''){
+						self.$toast('请选择仓库');
+						return
+					}
+					var param = {
+						modifyUser: localStorage.userCode,
+						modifyUserName: localStorage.userName,						
+						warehousecode:self.warehousecode,
+						locationcode: self.locationCode,
+						items:self.contentInfo,
+						movetype:self.warehousetype//1--实体 2--线边仓
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then(function () {
+						$.ajax({
+							url: serviceUrl + '/api/pda/changelocation',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.warehousecode = '';
+										self.warehouseName = '';
+										self.locationCode = '';
+										self.materialContent = '';
+										self.errorMsg1 = '';
+										self.contentInfo = [];
+										self.$refs.filed1.focus();
+									})
+								} else {
+									self.$toast(res.msg);
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function () {
+								self.$toast('网络异常');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.warehousecode = '';
+						self.warehouseName = '';
+						self.locationCode = '';
+						self.errorMsg1 = '';
+						self.errorMsg2 = '';
+						self.materialContent = '';
+						self.contentInfo=[];
+						self.$refs.filed1.focus();
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //货价条码	
+							if (self.warehousecode == undefined || self.warehousecode == '') {
+								self.$toast('请先选择仓库');
+								self.locationCode = '';
+								return;
+							}
+							this.getwarehouselocation();
+							break;
+						case 2: //箱号	
+							if (self.locationCode == undefined || self.locationCode == '') {
+								self.$toast('请先输入或扫描货架');
+								self.materialContent = '';
+								return;
+							}
+							if(self.warehousetype==1){//普通仓库
+								if(self.type == 1){//成品仓库
+									this.getboxcodeinfo()
+								}
+								else if(self.type == 2){//晶圆仓库
+									this.getstorematerial()
+								}
+							}else if(self.warehousetype == 2){//线边仓
+								if(self.type == 1){//晶圆线边仓
+									this.getstorematerial()
+								}
+								else if(self.type == 2){//框架线边仓
+									this.getlinestorepartnumber()
+								}
+								else if(self.type == 3){//物料线边仓
+									this.getlinestorepartnumber()
+								}
+								else if(self.type == 4){//测试线边仓
+									this.getCardInfo()
+								}
+							}
+							
+							break;
+						default:
+							break;
+					}
+				},
+				//获取仓库货架
+				getwarehouselocation(){
+						var self = this;
+							$.ajax({
+								url: serviceUrl + '/api/pda/getwarehouselocation',
+								type: 'GET',
+								data: {
+									warehousecode:self.warehousecode,
+          							locationcode: self.locationCode,
+									warehousetype:self.warehousetype//仓库类型  1--实体仓库  2--线边仓
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										self.errorMsg1 = ''
+										self.$refs.filed2.focus();
+									} else {
+										self.$toast(res.msg);
+										self.locationCode = '';
+										self.$refs.filed1.focus();
+									}
+								},
+								error: function () {
+									self.$toast('网络异常');
+									self.locationCode = '';
+										self.$refs.filed1.focus();
+								}
+							})
+				},
+				//获取物料信息
+				getlinestorepartnumber(){
+					var self = this;
+							$.ajax({
+								url: serviceUrl + '/api/pda/getlinestorepartnumber',
+								type: 'GET',
+								data: {
+									warehousecode:self.warehousecode,
+          							partnumber: self.materialContent
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										self.errorMsg1 = ''
+										self.contentInfo.push(res.data);
+										self.materialContent = '';
+										self.$refs.filed2.focus();
+									} else {
+										self.$toast(res.msg);
+										self.materialContent = '';
+										self.$refs.filed2.focus();
+									}
+								},
+								error: function () {
+									self.$toast('网络异常');
+									self.materialContent = '';
+									self.$refs.filed2.focus();
+								}
+							})
+				},
+				////获取成品信息
+				getboxcodeinfo(){
+					var self = this;
+							$.ajax({
+								url: serviceUrl + '/api/pda/getboxcodeinfo',
+								type: 'GET',
+								data: {
+									warehousecode:self.warehousecode,
+          							boxcode: self.materialContent
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										self.errorMsg1 = ''
+										self.contentInfo.push(res.data);
+										self.materialContent = '';
+										self.$refs.filed2.focus();
+									} else {
+										self.$toast(res.msg);
+										self.materialContent = '';
+										self.$refs.filed2.focus();
+									}
+								},
+								error: function () {
+									self.$toast('网络异常');
+									self.materialContent = '';
+									self.$refs.filed2.focus();
+								}
+							})
+				},
+				//获取卡号信息
+				getCardInfo(){
+					var self = this;
+					$.ajax({
+						url: serviceUrl + '/api/pda/carddetail',
+						type: 'GET',
+						data: {
+							cardID: self.materialContent,
+							warehousecode:self.warehousecode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+									if (res.code == 200) {
+										self.errorMsg1 = ''
+										var isExist = false;
+										for (var index = 0; index < self.contentInfo.length; index++) {
+											var element = self.contentInfo[index].cardID;
+											if (element == res.data.basicInfo.cardID) {
+												isExist = true;
+												break;
+											}
+										}
+										if(!isExist){
+											self.contentInfo.push(res.data.basicInfo);	
+										} else {
+											self.$toast('已扫描过相同卡号');
+										}
+										
+										self.materialContent = '';
+										self.$refs.filed2.focus();							
+									} else {
+										self.$toast(res.msg);
+										self.materialContent = '';
+										self.$refs.filed2.focus();
+									}
+								},
+								error: function () {
+									self.$toast('网络异常');
+									self.materialContent = '';
+									self.$refs.filed2.focus();
+								}
+					})
+				},
+				//获取晶圆信息
+				getstorematerial(){
+					var self = this;
+							$.ajax({
+								url: serviceUrl + '/api/pda/getstorematerial',
+								type: 'GET',
+								data: {
+									warehousecode:self.warehousecode,// -- 仓库编码 
+							        materialContent: self.materialContent,// -- 二维码内容  
+							        warehousetype:self.warehousetype//仓库类型  1--实体仓库  2--线边仓
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										debugger
+										self.errorMsg1 = ''
+										self.contentInfo.push(res.data);
+										self.materialContent = '';
+										self.$refs.filed2.focus();		
+									} else {
+										self.$toast(res.msg);
+										self.materialContent = '';
+										self.$refs.filed2.focus();
+									}
+								},
+								error: function () {
+									self.$toast('网络异常');
+									self.materialContent = '';
+									self.$refs.filed2.focus();
+								}
+							})
+				},
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						// self.$refs.filed2.blur();
+					}
+				},
+				onConfirmPopup(value) {
+					this.warehousecode = value.storeCode;
+					this.warehouseName = value.storeName;
+//					this.warehouseType = value.storeType;
+					this.showPicker = false;
+				},
+				deletItem:function(index){
+    				 this.contentInfo.splice(index,1)
+    			}
+			}
+		})
+	</script>
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>停机记录</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-cell title="机台编码" v-model="equipmentInfo.equipmentcode" />
+			</div>
+			<!-- <div>
+				<van-cell title="机台型号" v-model="equipmentInfo." />
+			</div>
+			<div>
+				<van-cell title="机台状态" v-model="equipmentInfo." />
+			</div> -->
+			<div>
+				<van-cell title="生产工单" v-model="equipmentInfo.workorder" />
+			</div>
+			<div>
+				<van-cell title="客户代码" v-model="equipmentInfo.customercode" />
+			</div>
+			<div>
+				<van-cell title="封装形式" v-model="equipmentInfo.packagecode" />
+			</div>
+			<div>
+				<van-cell title="产品型号" v-model="equipmentInfo.pmodel" />
+			</div>
+			<div>
+				<van-cell title="工卡数量" v-model="equipmentInfo.quantity" />
+			</div>
+			<div v-if="type == 1">
+				<van-cell title="停机类型" v-model="downTypeName" is-link @click="showPopup" />
+			</div>
+			<div v-else>
+				<van-cell title="停机类型" v-model="equipmentInfo.downtypename" />
+			</div>
+			<van-collapse v-model="activeNames" v-if="type == 2">
+				<van-collapse-item title="处理方式" name="1">
+					<div style="padding: 0 18px; background: #fff;">
+						<van-radio-group v-model="result">
+							<van-cell-group>
+								<van-cell style="padding: 0;" v-for="(item, index) in downReasonList" clickable
+									:key="item" :title="item.downreasonname" @click="toggle(index)">
+									<van-radio :name="item.downreasoncode" ref="checkboxes" slot="right-icon" />
+								</van-cell>
+							</van-cell-group>
+						</van-radio-group>
+					</div>
+				</van-collapse-item>
+			</van-collapse>
+		</div>
+		<div v-if="type == 2">
+			<div>
+				<van-field required v-model="equipmentInfo.comments" label="备注" input-align="right"
+					placeholder="请输入" />
+			</div>
+			<div>
+				<van-cell title="是否需要质检">
+					<van-radio-group v-model="equipmentInfo.radio" direction="horizontal">
+						<van-radio name="Y">需要</van-radio>
+						<van-radio name="N">不需要</van-radio>
+					</van-radio-group>
+				</van-cell>
+			</div>
+			<div>
+				<van-field v-model="spare" label="备品备件" input-align="right" placeholder="请输入或扫描备品备件"
+					@keyup.enter.native="onEnter()" required :error-message="errorMsg" error-message-align="right"/>
+			</div>
+			<van-cell-group title="备品备件信息">
+				<div class="confirm_dellist">
+					<div class="list_has_del" v-for="(item,index) in spareList">
+						<span>{{index+1}}、备件型号：{{item.pModel}}  当前库存：{{item.quantity}}</span>
+						<div class="list_has_del_r">
+							<span class="del_btn" @click="onDelete(index)">删除</span>
+						</div>
+						<van-field required v-model="item.qty" label="使用数量" 
+							placeholder="请输入" />
+					</div>
+				</div>
+			</van-cell-group>
+		</div>
+		
+		<div class="btm_btn">
+			<van-button type="info" block square @click="save">{{btnName}}</van-button>
+		</div>
+		<!-- <van-popup v-model="showpopup" position="right" :style="{ width: '80%',height:'100%' }">
+			<div class="popup_list">
+				<div class="popub_title">操作选择</div>
+				<div class="pop_list">
+				<van-checkbox-group v-model="selectedCode">
+					<van-checkbox name="1">
+						<div class="row_line">WB-1#<span class="fontright">XRDEF</span></div>
+					</van-checkbox>
+					<van-checkbox name="2">
+						<div class="row_line">WB-1#<span class="fontright">XRDEF</span></div>
+					</van-checkbox>
+					<van-checkbox name="3">
+						<div class="row_line">WB-1#<span class="fontright">XRDEF</span></div>
+					</van-checkbox>
+				</van-checkbox-group>
+				</div>
+			</div>
+			<van-row class="popup_fixed_btn">
+				<van-col span="10">
+					<van-button color="#ccc" square block @click="showpopup=false">取消
+					</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" square block @click="showpopup=false">确认选择
+					</van-button>
+				</van-col>
+			</van-row>
+		</van-popup>
+		<van-popup v-model="showPicker" position="bottom">
+			<van-picker show-toolbar :columns="downTypeList" @cancel="showPicker = false" @confirm="onConfirm"
+				value-key="downTypeName" />
+		</van-popup> -->
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				value: '',
+				showpopup: false,
+				activeNames: ['1'],
+				selectedCode: [],
+				showPicker: false,
+				columns: [],
+				list: ['a', 'b', 'c'],
+				result: [],
+				spare: '',
+				spareList: [],
+				errorMsg: "",
+
+				title: '停机',//标题
+				equipmentCode: '',//设备编码
+				type: 1,//1停机 2复机
+				equipmentInfo: {},
+				btnName: '',//按钮名称
+				downTypeCode: '',//停机类型
+				downTypeName: '',//停机类型
+				downTypeList: [],//停机类型
+				downReasonList: [],//停机原因
+				stationCode: '', //当前工序
+				deviceType: '' //机台类型
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+				var type = getQueryVariable('type');
+				this.equipmentCode = getQueryVariable('equipmentCode');//仓库编码
+				this.type = type ? type : '2';
+				if (this.type == 1) {
+					this.btnName = '停机'
+					this.title = '停机'
+					this.getStationCode()
+				} else if (this.type == 2) {
+					this.btnName = '复机'
+					this.title = '复机'
+				} else if (this.type == 3) {
+					this.btnName = '登修'
+					this.title = '登修'
+				}
+				this.getDetail();
+
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.value = codedata.Barcode;
+				},
+				//提交
+				save: function () {
+					var self = this;
+					var reasons = this.result;
+					if (this.type == 1) {
+						if (this.downTypeCode == undefined || this.downTypeCode == '') {
+							self.$toast('请选择停机类型');
+							return
+						}
+					} else if (this.type == 2) {
+						if (reasons == undefined || reasons == '' || reasons == null) {
+							self.$toast('请选择处理方式');
+							return
+						}
+						for(int i=0; i < this.spareList.length; i++){
+							if(this.spareList[i].qty > this.spareList[i].quantity){
+								self.$toast('领用数量不能大于库存数量');
+								return
+							}
+						}
+					}
+					var param = {
+						cardID: self.equipmentInfo.cardid,
+						customerCode: self.equipmentInfo.customercode,
+						dieBatch: self.equipmentInfo.diebatch,
+						dieModel: self.equipmentInfo.diemodel,
+						downReasonCode: reasons,
+						downTypeCode: self.downTypeCode,
+						equipmentCode: self.equipmentInfo.equipmentcode,
+						packageCode: self.equipmentInfo.packagecode,
+						partnumber: self.equipmentInfo.partnumber,
+						pmodel: self.equipmentInfo.pmodel,
+						quantity: self.equipmentInfo.quantity,
+						shiftCode: self.equipmentInfo.shiftcode,
+						stationCode: self.equipmentInfo.stationcode,
+						stepCode: self.equipmentInfo.stepcode,
+						workOrder: self.equipmentInfo.workorder,
+						comments: self.equipmentInfo.comments,
+						radio: self.equipmentInfo.radio,
+						modifyUser: localStorage.userCode,
+						modifyUserName: localStorage.userName,
+						inorout: self.type,
+						spareList: self.spareList
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认' + self.btnName + '?',
+					}).then(function () {
+						// on confirm
+						$.ajax({
+							url: serviceUrl + '/api/pda/offonsubmit',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.backLast();
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+				//是否触发回车
+				onEnter: function () {
+					var self = this;
+					if (self.spare == undefined || self.spare == '') {
+						self.$toast('请先输入或扫描备品备件');
+						self.spare = '';
+						return;
+					}
+					$.ajax({
+						url: serviceUrl + '/api/pda/getSpare',
+						type: 'GET',
+						data: {
+							spare: self.spare,
+							stationCode: self.stationCode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							var isTips = false;
+							if (res.code != 200) {
+								self.$toast(res.msg);
+							} else {
+								var isExist = false;
+								for (var index = 0; index < self.spareList.length; index++) {
+									var element = self.spareList[index];
+									if (element.partNumber == res.data.partNumber) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.spareList.push(res.data[0]);
+								} else {
+									self.$toast('已扫描过相同备件');
+								}
+							}
+							self.spare = ''
+						},
+						error: function () {
+						}
+					});
+				},
+				//删除
+				onDelete: function (index) {
+					var self = this;
+					self.spareList.splice(index, 1)
+				},
+				//获取明细
+				getDetail: function () {
+					var self = this
+					$.ajax({
+						url: serviceUrl + '/api/pda/getequipmentcardinfo',
+						type: 'GET',
+						data: {
+							equipmentCode: self.equipmentCode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.equipmentInfo = res.data;
+								// if(res.data.){
+								// 	self.reasons = res.data.downtypecode;
+								// }
+								if (res.data.downtypecode) {
+									self.downTypeCode = res.data.downtypecode;
+									if (self.type == 2) {
+										self.getDownReasons();
+									}
+								}
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				//停机工序
+				getStationCode: function () {
+					var self = this
+					$.ajax({
+						url: serviceUrl + '/api/pda/getStationCodeByEquipmentCode',
+						type: 'GET',
+						data: {
+							equipmentCode: self.equipmentCode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.stationCode = res.data.stationCode;
+								self.deviceType = res.data.deviceType;
+								self.getDownTypes();
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				//停机类型
+				getDownTypes: function () {
+					var self = this
+					$.ajax({
+						url: serviceUrl + '/api/pda/querydowntypes',
+						type: 'GET',
+						data: {
+							stationCode: self.stationCode,
+							deviceType: self.deviceType
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.downTypeList = res.data;
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				//停机原因
+				getDownReasons: function () {
+					var self = this
+					$.ajax({
+						url: serviceUrl + '/api/pda/querydownreasons',
+						type: 'GET',
+						data: {
+							downTypeCode: self.downTypeCode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.downReasonList = res.data;
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				showPopup() {
+					this.showPicker = true;
+				},
+				onClose() {
+					this.showPicker = false;
+				},
+				//选择
+				onConfirm(value) {
+					this.downTypeCode = value.downTypeCode;
+					this.downTypeName = value.downTypeName;
+					this.showPicker = false;
+					//this.getDownReasons();
+				},
+				//停机类型
+				onChange(picker, value, index) {
+					Toast(`当前值：${value}, 当前索引：${index}`);
+				},
+				toggle(index) {
+					this.$refs.checkboxes[index].toggle();
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

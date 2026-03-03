@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>设备待修列表</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-cell-group title="待修设备列表">
+					<div class="confirm_dellist">
+						<div class="list_has_del" v-for="(item,index) in Device_List">
+							<span>{{index+1}}、设备编码：{{item.device_Code}}   设备状态：{{item.status}}</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="onCheck(item)">处理</span>
+							</div>
+						</div>
+					</div>
+				</van-cell-group>
+			</div>
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					showScan: false,
+					title: '设备待修列表',
+					Device_List: [] //设备编码
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {},
+				created() {
+					this.getDetail();
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//获取明细
+					getDetail: function() {
+						var self = this
+						$.ajax({
+							url: serviceUrl + '/api/pda/queryDevice',
+							type: 'GET',
+							data: {
+								userCode: localStorage.userCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.Device_List = res.data;
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					//维修
+					onCheck: function (item) {
+						var self = this;
+						if(item.status == "待维修"){
+							window.location.href =
+								'pullForCheck.html?type=3&equipmentCode=' + item.device_Code
+						}else{
+							window.location.href =
+								'pullForCheck.html?type=2&equipmentCode=' + item.device_Code
+						}
+						
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC首检</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+
+
+			<div>
+				<van-field v-model="time" label="日期时间" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div>
+
+				<van-field label="班别" input-align="right">
+					<template #input>
+						<van-radio-group v-model="clazz" direction="horizontal">
+							<van-radio name="A">A</van-radio>
+							<van-radio name="B">B</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div id='no'>
+				<van-field v-model="locationCode" label="机台号" input-align="right" placeholder="请输入或扫描设备" ref="filed0"
+					autofocus required :error-message="errorMsg1" error-message-align="right"
+					@keyup.enter.native="onEnter(1)" />
+			</div>
+
+			<div>
+				<van-field label="编带影像检测开启" input-align="right">
+					<template #input>
+						<van-radio-group v-model="TapeImageDetection" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div>
+				<van-field label="振碗无料渣" input-align="right">
+					<template #input>
+						<van-radio-group v-model="vibratingBowlNoResidue" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="热封刀无异物" input-align="right">
+					<template #input>
+						<van-radio-group v-model="heatSealKnifeNoForeign" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="盖带导向轮无异物" input-align="right">
+					<template #input>
+						<van-radio-group v-model="coverTapeGuidePulley" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="载带吹气装置和导向轮无异物" input-align="right">
+					<template #input>
+						<van-radio-group v-model="carrierTapeBlowingDevice" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="气枪头安装软管且未漏出金属头" input-align="right">
+					<template #input>
+						<van-radio-group v-model="airGunHoseInstallation" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="小转盘模块无灰尘" input-align="right">
+					<template #input>
+						<van-radio-group v-model="smallTurntableNoDust" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="测试座无锡渣粉尘" input-align="right">
+					<template #input>
+						<van-radio-group v-model="testSocketClean" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="3D镜座无粉尘" input-align="right">
+					<template #input>
+						<van-radio-group v-model="threeDLensHolderClean" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="离子风扇正常工作且扇叶无损坏" input-align="right">
+					<template #input>
+						<van-radio-group v-model="ionFanWorking" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="机台标签整洁、无损坏、脱落" input-align="right">
+					<template #input>
+						<van-radio-group v-model="machineLabelsIntact" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div>
+				<van-field label="设备台面及周边地面无灰尘，无异物" input-align="right">
+					<template #input>
+						<van-radio-group v-model="equipmentAreaClean" direction="horizontal">
+							<van-radio name="正常">正常</van-radio>
+							<van-radio name="异常">异常</van-radio>
+							<van-radio name="无此功能">无此功能</van-radio>
+							<van-radio name="停机">停机</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div class='no'>
+				<van-field v-model="Inspector" label="检查人" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="leaderConfirms" label="确认人" input-align="right" placeholder="请输入"
+					ref="filed1" required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+
+			<!-- 		<div class='no'>
+				<van-field v-model="Remarks" label="备注" input-align="right" placeholder="请输入" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div> -->
+			<van-tag type="success" size="large">{{tag}}</van-tag>
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					type: '', //物料类型
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					errorMsg1: "",
+					errorMsg2: "",
+
+					qc: '',
+					qcCode: '',
+					locationCode: '', //货架
+					materialContent: '', //条码内容
+					pModel: "",
+					time: "",
+					remark: '',
+					judgment: '',
+					tag: "点检项目中无此功能填“N/A”，每次断电开机包装正常产品前先空封两次对加热条进行预热，确认压痕无异常开始正常工；三日更换一次高温胶布（早8点前更换完成）；设备故障及时报修处理。",
+					clazz: '',
+					Remarks: '',
+
+					Inspector: '',
+					leaderConfirms: '',
+
+					// 编带影像检测开启状态
+					TapeImageDetection: '',
+					// 振碗无料渣状态
+					vibratingBowlNoResidue: '',
+					// 热封刀无异物状态
+					heatSealKnifeNoForeign: '',
+					// 盖带导向轮无异物状态
+					coverTapeGuidePulley: '',
+					// 载带吹气装置和导向轮无异物状态
+					carrierTapeBlowingDevice: '',
+					// 气枪头安装软管且未漏出金属头状态
+					airGunHoseInstallation: '',
+					// 小转盘模块无灰尘状态
+					smallTurntableNoDust: '',
+					// 测试座无锡渣粉尘状态
+					testSocketClean: '',
+					// 3D镜座无粉尘状态
+					threeDLensHolderClean: '',
+					// 离子风扇正常工作且扇叶无损坏状态
+					ionFanWorking: '',
+					// 机台标签整洁、无损坏、脱落状态
+					machineLabelsIntact: '',
+					// 设备台面及周边地面无灰尘，无异物状态
+					equipmentAreaClean: '',
+					
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.Inspector = localStorage.userName;
+
+				},
+				created() {
+
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+
+
+					this.title = '焊线产品测试打印编带机自主保养记录表'
+
+					if (locationCode != null) {
+						this.materialContent = materialContent
+						this.locationCode = locationCode
+					}
+
+				},
+				methods: {
+
+					istestDataOfRange(value) {
+						return value !== '' && (parseFloat(value) > 30 || parseFloat(value) < 0);
+					},
+					onConfirmInspectionType(value) {
+						this.inspectionType = value;
+					},
+					onCancelInspectionType() {
+						this.inspectionType = '';
+					},
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+						var param = {
+							clazz:self.clazz,
+							
+							EquipmentCode: self.locationCode, // 货架
+							TapeImageDetection:self.TapeImageDetection,
+							vibratingBowlNoResidue:self.vibratingBowlNoResidue,
+							heatSealKnifeNoForeign:self.heatSealKnifeNoForeign,
+							coverTapeGuidePulley:self.coverTapeGuidePulley,
+							carrierTapeBlowingDevice:self.carrierTapeBlowingDevice,
+							airGunHoseInstallation:self.airGunHoseInstallation,
+							smallTurntableNoDust:self.smallTurntableNoDust,
+							testSocketClean:self.testSocketClean,
+							threeDLensHolderClean:self.threeDLensHolderClean,
+							ionFanWorking:self.ionFanWorking,
+							machineLabelsIntact:self.machineLabelsIntact,
+							equipmentAreaClean:self.equipmentAreaClean,
+							Inspector:self.Inspector,
+							leaderConfirms:self.leaderConfirms,
+
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/postTestselfmmaintenancerecord',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+
+											// 重置所有属性
+											self.locationCode = '';
+											self.materialContent = '';
+											self.errorMsg1 = '';
+											self.errorMsg2 = '';
+											self.pModel = '';
+											self.getNowTime();
+
+											self.testData1 = ''
+											self.testData2 = ''
+											self.testData3 = ''
+
+
+										})
+									} else {
+										self.$toast(res.msg);
+
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+
+							// 重置所有属性
+							self.locationCode = '';
+							self.materialContent = '';
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+							self.pModel = '';
+							self.getNowTime();
+
+							self.remark = '';
+							self.judgment = '';
+							self.package = '';
+							self.clazz = ''
+							self.testData1 = ''
+							self.testData2 = ''
+							self.testData3 = ''
+
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: {
+								self.onFocus(type);
+							}
+							case 1: //工卡			
+								self.onFocus(type);
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+							case 4: //缺陷
+
+								var isExist = false;
+								for (var index = 0; index < self.reasons.length; index++) {
+									var element = self.reasons[index];
+									if (self.txtReason == element) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.reasons.push(self.txtReason)
+								} else {
+									self.$toast('已扫描过相同缺陷');
+								}
+								self.txtReason = ''
+
+								break;
+						}
+					},
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								equipmentCode: self.locationCode,
+								type: 21,
+								kind: 1
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg1 = ''
+									self.$refs.filed2.focus();
+									// self.locationCode = res.data.EquipmentCode;
+									self.pModel = res.data.PModel;
+									self.materialContent = res.data.CardID;
+									self.package = res.data.PackageName;
+
+								} else {
+									self.$toast(res.msg);
+
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+						self.reasons.splice(index, 1)
+					},
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+</html>

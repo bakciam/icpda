@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>扣押</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<div>
+				<van-nav-bar title="扣押" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-cell title="工卡卡号" v-model="cardID" />
+			</div>
+			<div>
+				<van-cell title="当前工序" v-model="basicForm.stationName" />
+			</div>
+			<div>
+				<van-cell title="封装形式" v-model="basicForm.packageCode" />
+			</div>
+			<div>
+				<van-cell title="是否交接" v-model="basicForm.truckIn" />
+			</div>
+			<div>
+				<van-cell title="当前数量" v-model="basicForm.curNum" />
+			</div>
+			<div>
+				<van-cell title="工卡状态" v-model="basicForm.statusText" />
+			</div>
+
+			<div>
+
+				<van-field v-model="remark" label="扣押原因" input-align="right" placeholder="请输入"
+					error-message-align="right" />
+			</div>
+			<div class="btm_btn">
+				<van-button type="info" block square @click="detain">扣押</van-button>
+			</div>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					userName: localStorage.userName ? localStorage.userName : '',
+					cardID: '',
+					basicForm: {},
+					remark: '',
+				},
+				created: function() {
+					var cardID = getQueryVariable('cardID');
+					this.cardID = cardID ? cardID : '';
+					this.getCardDetail()
+				},
+				methods: {
+					//返回上一页
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					//获取工卡明细
+					getCardDetail: function() {
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getcard',
+							type: 'GET',
+							data: {
+								cardID: self.cardID,
+								userID: localStorage.userCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.basicForm = res.data;
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					//扣押
+					detain: function() {
+						var self = this;
+						var saveData = {
+							cardID: self.cardID, //--工卡ID
+							userID: localStorage.userCode,
+							type: 6,
+							curNum: self.basicForm.curNum, //-- 当前数量
+							stationCode: self.basicForm.stationCode, //--工序编码
+							curStepCode: self.basicForm.curStepCode, //-- 工步编码
+							handler: localStorage.userCode,
+							handlerName: localStorage.userName,
+							remark: self.remark
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认扣押?',
+						}).then(function() {
+							// on confirm
+							$.ajax({
+								url: serviceUrl + '/api/pda/cardoperation',
+								type: 'POST',
+								data: saveData,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+												title: '提示',
+												message: '操作成功!'
+											})
+											.then(function() {
+												self.backLast();
+											})
+
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function() {
+									self.$toast('服务器错误！');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

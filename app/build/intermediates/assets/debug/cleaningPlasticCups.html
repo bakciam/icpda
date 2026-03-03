@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC首检</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+		<link rel="stylesheet" href="styles/style.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+
+
+			<div>
+				<van-field v-model="time" label="清胶盘日期时间" :label-width="100" input-align="right" placeholder="请输入"
+					required error-message-align="right" />
+			</div>
+			<div id='no'>
+				<van-field v-model="equipmentCode" label="机台号" input-align="right" placeholder="请输入或扫描设备" autofocus
+					required :error-message="errorMsg1" error-message-align="right" @keyup.enter.native="onEnter(1)" />
+			</div>
+			<div>
+				<van-field label="清胶盘时机" input-align="right">
+					<template #input>
+						<van-radio-group v-model="cleanTiming" direction="horizontal">
+							<van-radio name="待计划">待计划</van-radio>
+							<van-radio name="停机">停机</van-radio>
+							<van-radio name="改胶">改胶</van-radio>
+							<van-radio name="超时">超时</van-radio>
+							<van-radio name="到期">到期</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div class='no'>
+				<van-field v-model="qc" label="清胶盘人员" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div>
+				<van-field label="点胶套筒是否清理" :label-width="120" input-align="right">
+					<template #input>
+						<van-radio-group v-model="isClean" direction="horizontal">
+							<van-radio name="是">是</van-radio>
+							<van-radio name="否">否</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div class='no'>
+				<van-field v-model="technician" label="技术员确认" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="Remarks" label="备注" input-align="right" placeholder="请输入" :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div class='no'>
+				<van-field :disabled="isDisabled" v-model="qualityPersonnel" label="品质人员确认" input-align="right" placeholder="请输入" ref="filed2"
+					 :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					activeNames: ['1'],
+					type: '', //物料类型
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					errorMsg1: "",
+					errorMsg2: "",
+					Remarks: '',
+
+					qc: '',
+					qcCode: '',
+
+
+					tag: "",
+
+					time: "",
+					equipmentCode: '',
+					cleanTiming: '',
+					technician: '',
+					isClean: '',
+					cleanTiming: '',
+					Remarks: '',
+					qualityPersonnel: '',
+					isDisabled:true,
+					
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.qc = localStorage.userName;
+
+				},
+				created() {
+
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+
+
+					this.title = 'IC清理胶杯表'
+
+					if (locationCode != null) {
+						this.materialContent = materialContent
+						this.locationCode = locationCode
+					}
+
+				},
+				methods: {
+
+
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+						var param = {
+
+							equipmentCode: self.equipmentCode,
+							cleanTiming: self.cleanTiming,
+							userCode: localStorage.userCode,
+							userName: localStorage.userName,
+						
+							technician: self.technician,
+							qualityPersonnel: self.qualityPersonnel,
+							isClean: self.isClean,
+							Remarks: self.Remarks,
+							time: self.time
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/postcleaningPlastic',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+  
+											// 重置所有属性
+											self.getNowTime();
+											
+
+
+										})
+									} else {
+										self.$toast(res.msg);
+
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+
+							// 重置所有属性
+
+							// 示例：如果需要重新获取初始数据
+							window.location.reload();
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: {
+								self.onFocus(type);
+								break;
+							}
+							case 1:
+								this.getCleaningPlasticCupInfo();
+								break;
+							case 2:
+								break;
+						}
+					},
+
+					//获取卡号信息
+					getCleaningPlasticCupInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCleaningPlasticCups',
+							type: 'GET',
+							data: {
+								equipmentCode: self.equipmentCode,
+								
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg1 = ''
+									self.$refs.filed2.focus();
+									// self.locationCode = res.data.EquipmentCode;
+									self.cleanTiming = res.data.CleanTiming;
+									// self.EquipmentCode = res.data.EquipmentCode;
+									self.isClean = res.data.IsClean;
+									// self.QualityPersonnel = res.data.QualityPersonnel;
+									self.time = res.data.Time;
+									self.technician = res.data.Technician;
+									self.Remarks=res.data.Remarks;
+									self.isDisabled=false
+								} else {
+									self.$toast(res.msg);
+
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+						self.reasons.splice(index, 1)
+					},
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+</html>

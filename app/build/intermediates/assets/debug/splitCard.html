@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>拆卡</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar title="拆卡" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-field v-model="value" label="工卡卡号" input-align="right" placeholder="自动带出" disabled />
+			</div>
+			<div class="collspan_list">
+				<van-collapse v-model="activeNames">
+					<van-collapse-item title="基本信息" name="1">
+						<div>
+							<van-field v-model="value" label="当前工序" input-align="right" placeholder="自动带出" disabled/>
+						</div>
+						<div>
+							<van-field v-model="value" label="当前数量" input-align="right" placeholder="自动带出" disabled/>
+						</div>
+						<div>
+							<van-field v-model="value" label="生产工单" input-align="right" placeholder="自动带出" disabled/>
+						</div>
+						<div>
+							<van-field v-model="value" label="下道工序" input-align="right" placeholder="自动带出" disabled/>
+						</div>
+						<div>
+							<van-field v-model="value" label="当前状态" input-align="right" placeholder="自动带出" disabled/>
+						</div>
+						<div>
+							<van-field v-model="value" label="客户代码" input-align="right" placeholder="自动带出" disabled/>
+						</div>
+						<div>
+							<van-field v-model="value" label="封装形式" input-align="right" placeholder="自动带出" disabled/>
+						</div>
+						<div>
+							<van-field v-model="value" label="拆分数量" use-button-slot input-align="right" placeholder="自动带出">
+								<van-button slot="button" type="info" size="small">确认</van-button>
+							</van-field>
+						</div>
+					</van-collapse-item>
+				</van-collapse>
+			</div>
+			<div class="collspan_list">				
+				<van-collapse v-model="activeNames2">
+					<van-collapse-item name="2" title="拆分后工卡">
+						<div class="list_has_del">
+							<span>1、拆分数量：1</span>
+							<div class="list_has_del_r">
+								<span class="del_btn">删除</span>
+							</div>
+						</div>
+						<div class="list_has_del">
+							<span>2、拆分数量：1</span>
+							<div class="list_has_del_r">
+								<span class="del_btn">删除</span>
+							</div>
+						</div>
+						<div class="list_has_del">
+							<span>3、拆分数量：1</span>
+							<div class="list_has_del_r">
+								<span class="del_btn">删除</span>
+							</div>
+						</div>
+					</van-collapse-item>
+				</van-collapse>
+			</div>
+			<div class="collspan_list">
+							<van-field v-model="value" label="操作备注" input-align="right" placeholder="请输入"/>
+						</div>
+			<div class="btm_btn">
+				<van-button type="info" block square>确认拆分</van-button>
+			</div>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					value: '',
+					showpopup:false,
+					activeNames: ['1'],
+					activeNames2: [],
+					activeNames3: [],
+					activeNames4: [],
+					selectedCode:[]
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					window.scanCode = this.scanCode;
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					scanCode: function(data) { //监听扫码事件
+						var codedata = JSON.parse(data);
+						this.value = codedata.Barcode;
+					},
+				}
+			})
+		</script>
+	</body>
+</html>

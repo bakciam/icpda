@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>备品备件领用</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-field v-model="equipmentCode" label="机台编码" input-align="right" placeholder="请输入或扫描机台编码"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1" error-message-align="right"/>
+			</div>
+			<div>
+				<van-field v-model="partNumber" label="物料标签" input-align="right" placeholder="请输入或扫描物料标签"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2" error-message-align="right"/>
+			</div>
+			<div>
+				<van-cell title="存放位置" v-model="locationCode" />
+			</div>
+			<div>
+				<van-cell title="配件名称" v-model="partName" />
+			</div>
+			<div>
+				<van-field v-model="quantity" label="数量" input-align="right" required/>
+			</div>
+			<div>
+				<van-cell title="单位" v-model="unitName" />
+			</div>
+			<div>
+				<van-field v-model="changeStation" label="更换位置" input-align="right" required/>
+			</div>
+			<div>
+				<van-field v-model="comments" label="备注" input-align="right" required/>
+			</div>
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">确认</van-button>
+				</van-col>
+			</van-row>
+		</div>
+
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				title: '备品备件领用',
+				type: '1',
+				equipmentCode: '',//工卡
+				partNumber: '',//标签
+				errorMsg1: "",
+				errorMsg2: "",
+				locationCode: "",
+				partName: "",
+				testPieceCode: "",
+				quantity: "",
+				unitName: "",
+				changeStation: "",
+				testAge: "",
+				reason: "",
+				comments: "",
+				createUser: "",
+				stationCode: ""
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//出入库提交
+				save: function () {
+					var self = this;
+					var param = {
+						equipmentCode: self.equipmentCode,
+						partNumber: self.partNumber,
+						partName: self.partName,
+						locationCode: self.locationCode,
+						testPieceCode: self.testPieceCode,
+						quantity: self.quantity,
+						changeStation: self.changeStation,
+						testAge: self.testAge,
+						reason: self.reason,
+						comments: self.comments,
+						createUser: localStorage.userName,
+						stationCode: self.stationCode,
+						type: self.type
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then(function () {
+						$.ajax({
+							url: serviceUrl + '/api/pda/outSpare',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.equipmentCode = '';
+										self.errorMsg1 = '';
+										self.partNumber = '';
+										self.locationCode = '';
+										self.partName = '';
+										self.unitName = '';
+										self.testPieceCode = '';
+										self.quantity = '';
+										self.changeStation = '';
+										self.testAge = '';
+										self.reason = '';
+										self.comments = '';
+										self.stationCode = '';
+										self.$refs.filed1.focus();
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.equipmentCode = '';
+						self.errorMsg1 = '';
+						self.partNumber = '';
+						self.locationCode = '';
+						self.partName = '';
+						self.unitName = '';
+						self.testPieceCode = '';
+						self.quantity = '';
+						self.changeStation = '';
+						self.testAge = '';
+						self.reason = '';
+						self.comments = '';
+						self.stationCode = '';
+						self.$refs.filed1.focus();
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //工卡			
+							$.ajax({
+								url: serviceUrl + '/api/pda/getStationCodeByEquipmentCode',
+								type: 'GET',
+								data: {
+									equipmentCode: self.equipmentCode
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									self.stationCode = res.data.stationCode;
+								},
+								error: function () {
+								}
+							});
+							self.onFocus(type);
+							break;
+						case 2: //标签	
+							if (self.equipmentCode == undefined || self.equipmentCode == '') {
+								self.$toast('请先输入或扫描设备');
+								self.partNumber = '';
+								return;
+							}
+							$.ajax({
+								url: serviceUrl + '/api/pda/getSpare',
+								type: 'GET',
+								data: {
+									spare: self.partNumber,
+									stationCode: self.stationCode
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									self.partName = res.data[0].PartName;
+									self.unitName = res.data[0].unitName;
+									self.locationCode = res.data[0].locationCode;
+								},
+								error: function () {
+								}
+							});
+							self.onFocus(type);
+							break;
+						default:
+							break;
+					}
+				},
+
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						self.$refs.filed3.focus();
+					}
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

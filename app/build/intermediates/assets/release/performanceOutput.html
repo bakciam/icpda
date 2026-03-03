@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC首检</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+
+			<div>
+
+				<van-field v-model="time" label="日期时间" input-align="right" placeholder="请输入" ref="filed1" required />
+			</div>
+			<div>
+				<van-field disabled v-model="stationName" label="工序" input-align="right" placeholder="请输入"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field disabled v-model="package" label="封装类型" input-align="right" placeholder="请输入"
+					error-message-align="right" />
+			</div>
+			<div id='no'>
+				<van-field v-model="locationCode" label="机台号" input-align="right" placeholder="请输入或扫描设备" ref="filed0"
+					required :error-message="errorMsg1" error-message-align="right" autofocus
+					@keyup.enter.native="onEnter(1)" />
+			</div>
+			<div class='no'>
+				<van-field v-model="userName" label="姓名" input-align="right" placeholder="请输入" autofocus ref="filed1"
+					required error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="materialContent" label="工卡号" input-align="right" placeholder="请输入或扫描工卡号"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+			<div v-if="stationName=='贴片工序'">
+
+				<van-field v-model="dieTpye" label="芯片型号" input-align="right" placeholder="请选择芯片型号">
+					<template #input>
+						<van-dropdown-menu>
+							<van-dropdown-item v-model="dieTpye" :options="options" />
+						</van-dropdown-menu>
+					</template>
+				</van-field>
+			</div>
+			<div>
+				<van-field disabled v-model="partName" label="产品型号" input-align="right" placeholder="请输入"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="TBA" label="剔除时间" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(3)" required error-message-align="right" :error-message="errorMsg3" />
+			</div>
+			<div>
+				<van-field disabled v-model="UPH" label="UPH" input-align="right" error-message-align="right" />
+			</div>
+
+
+
+			<div>
+				<van-field v-model="theoreticalCapacity" label="理论产能" input-align="right" placeholder="请输入" />
+			</div>
+
+			<div>
+				<van-field v-model="actualCapacity" label="实际产能" input-align="right" placeholder="请输入" />
+			</div>
+
+
+
+
+			<div class='no'>
+				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入" ref="filed1" />
+			</div>
+
+			<div class="btm_btn">
+				<van-button type="info" block square @click="save">{{btnName}}</van-button>
+			</div>
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup"
+					value-key="storeName" />
+			</van-popup>
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					type: '', //物料类型
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					qc: '',
+					qcCode: '',
+
+					locationCode: '', //货架
+					materialContent: '', //条码内容
+					errorMsg1: "",
+					errorMsg2: "",
+					errorMsg3: "",
+					pModel: "",
+					time: "",
+					package: "",
+					remark: '',
+					numberOfSample: 0,
+
+
+
+					userCode: '',
+					userName: '',
+					stationName: '',
+					stationCode: '',
+					TBA: '',
+					equipment: null,
+					UPH: 0,
+					partName: '',
+					stationType: 0,
+					supplierName: '',
+					application: '',
+					theoreticalCapacity: 0,
+					actualCapacity: 0,
+					dieTpye: '',
+					options: [{
+							text: '型号1',
+							value: 'model1',
+							pinNumber: 1
+						},
+			 			{
+							text: '型号2',
+							value: 'model2',
+							pinNumber: 1
+						}
+					],
+					equipmentModel: ''
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.userCode = localStorage.userCode;
+					this.userName = localStorage.userName;
+
+				},
+				created() {
+
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+
+
+					this.title = 'IC产出记录'
+
+				},
+				methods: {
+
+
+
+					//获取设备列表
+					getequipments: function() {
+						var self = this;
+
+						$.ajax({
+							url: serviceUrl + '/api/pda/getStationCodeByEquipmentCode',
+							type: 'GET',
+							data: {
+								equipmentCode: self.locationCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.stationCode = res.data.stationCode
+									self.stationName = res.data.stationName
+									self.equipment = res.data.equ_Equipment;
+									self.supplierName = res.data.equ_Equipment.SupplierName;
+									// self.stationType = res.data.equ_Equipment.StationType;
+									self.equipmentModel = res.data.equ_Equipment.Equipmentmodel;
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+
+					onConfirmInspectionType(value) {
+						this.inspectionType = value;
+					},
+					onCancelInspectionType() {
+						this.inspectionType = '';
+					},
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+						if (self.UPH == 0) {
+							// self.$toast('请确认输入的UPH是否获取到数值');
+							self.$dialog.alert({
+								title: '错误',
+								message: '请确认输入的UPH是否获取到数值',
+							}).then(() => {
+								// on close
+							});
+							return;
+						}
+						// var	trueset=self.UPH/1*12
+						if (self.UPH / 1 * 12 < self.actualCapacity) {
+							// self.$toast('输入值大于UPH*12');
+							self.$dialog.alert({
+								title: '错误',
+								message: '输入值大于UPH*12',
+							}).then(() => {
+								// on close
+							});
+							return;
+						}
+						var param = {
+							packageCode: self.package,
+							cardID: self.materialContent,
+							equipmentCode: self.locationCode,
+							userName: localStorage.userName,
+							userCode: localStorage.userCode,
+							partName: self.partName,
+							UPH: self.UPH,
+							TBA: self.TBA,
+							theoreticalCapacity: self.theoreticalCapacity,
+							actualCapacity: self.actualCapacity,
+							comment: self.remark,
+							stationCode: self.stationCode,
+							stationName: self.stationName,
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/performanceoutput',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+
+										})
+									} else {
+										self.$toast(res.msg);
+
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+
+						self.reasons.splice(index, 1)
+
+
+
+
+					},
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+
+							// 重置所有属性
+
+
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0:
+								self.onFocus(type);
+								break;
+							case 1: //工卡			
+								this.getequipments();
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+							case 3:
+								this.getCardUPH();
+								break;
+
+						}
+					},
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								equipmentCode: self.locationCode,
+								type: 6,
+								kind: 0
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg2 = ''
+									self.partName = res.data.cardInfo.PartName
+									self.package = res.data.cardInfo.PackageCode
+									self.options = res.data.options
+								} else {
+									self.$toast(res.msg);
+									self.errorMsg2 = res.msg
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+
+
+					//获取卡号信息
+					getCardUPH() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardUPH',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								process: self.stationName,
+								equipmentCode: self.locationCode,
+								stationType: self.stationType,
+								dieType: self.dieTpye,
+								supplierName: self.supplierName,
+								equipmentModel: self.equipmentModel,
+								TBA: self.TBA
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg3 = ''
+									self.UPH = res.data.task[0].UPH
+									self.theoreticalCapacity = res.data.theoreticalCapacity
+
+
+								} else {
+									self.$toast(res.msg);
+									self.errorMsg3 = res.msg
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+
+
+						this.showPicker = false;
+					},
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+</html>

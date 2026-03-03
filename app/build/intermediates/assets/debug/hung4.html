@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC巡查</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-cell :value="ps" />
+			</div>
+			<div class='no'>
+				<van-field v-model="time" label="日期时间" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+
+			<div id='no'>
+				<van-field v-model="locationCode" label="设备编号" input-align="right" placeholder="请输入或扫描设备" ref="filed0"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="materialContent" label="工卡号" input-align="right" placeholder="请输入或扫描工卡号"
+					@keyup.enter.native="onEnter(2)" autofocus ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+
+
+			<div class='no'>
+				<van-field disabled v-model="package" label="封装类型" input-align="right" placeholder="没有工卡,请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field disabled v-model="pName" label="产品名称" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+
+			<div id='testNumber'>
+				<van-field v-model="testNumber" label="抽检数量" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+
+
+			<van-row v-if="type==3" id="size" class="flex-container">
+				<van-col span="5" class="flex-label-col">
+					<span class="field-label">尺寸：</span>
+				</van-col>
+				<van-col span="19" class="flex-field-col">
+					<van-row>
+						<van-field v-model="long" label="全长" placeholder="输入..."
+							:style="{ backgroundColor: isLongOutOfRange(long) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="long2" label="全长 2" placeholder="输入..."
+							:style="{ backgroundColor: isLongOutOfRange(long2) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="long3" label="全长 3" placeholder="输入..."
+							:style="{ backgroundColor: isLongOutOfRange(long3) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="long4" label="全长 4" placeholder="输入..."
+							:style="{ backgroundColor: isLongOutOfRange(long4) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="long5" label="全长 5" placeholder="输入..."
+							:style="{ backgroundColor: isLongOutOfRange(long5) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longLeft" label="单边左" placeholder="输入..."
+							:style="{ backgroundColor: isLongLeftOutOfRange(longLeft) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longLeft2" label="单边左 2" placeholder="输入..."
+							:style="{ backgroundColor: isLongLeftOutOfRange(longLeft2) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longLeft3" label="单边左 3" placeholder="输入..."
+							:style="{ backgroundColor: isLongLeftOutOfRange(longLeft3) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longLeft4" label="单边左 4" placeholder="输入..."
+							:style="{ backgroundColor: isLongLeftOutOfRange(longLeft4) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longLeft5" label="单边左 5" placeholder="输入..."
+							:style="{ backgroundColor: isLongLeftOutOfRange(longLeft5) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longRight" label="单边右" placeholder="输入..."
+							:style="{ backgroundColor: isLongRightOutOfRange(longRight) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longRight2" label="单边右 2" placeholder="输入..."
+							:style="{ backgroundColor: isLongRightOutOfRange(longRight2) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longRight3" label="单边右 3" placeholder="输入..."
+							:style="{ backgroundColor: isLongRightOutOfRange(longRight3) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longRight4" label="单边右 4" placeholder="输入..."
+							:style="{ backgroundColor: isLongRightOutOfRange(longRight4) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="longRight5" label="单边右 5" placeholder="输入..."
+							:style="{ backgroundColor: isLongRightOutOfRange(longRight5) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt" label="落地高" placeholder="输入..."
+							:style="{ backgroundColor: isHigtOutOfRange(higt) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt2" label="落地高 2" placeholder="输入..."
+							:style="{ backgroundColor: isHigtOutOfRange(higt2) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt3" label="落地高 3" placeholder="输入..."
+							:style="{ backgroundColor: isHigtOutOfRange(higt3) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt4" label="落地高 4" placeholder="输入..."
+							:style="{ backgroundColor: isHigtOutOfRange(higt4) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt5" label="落地高 5" placeholder="输入..."
+							:style="{ backgroundColor: isHigtOutOfRange(higt5) ? 'red' : 'white' }" />
+					</van-row>
+					<!-- <van-row>
+						<van-field v-model="higt1" label="脚位共平面高度" placeholder="输入..."
+							:style="{ backgroundColor: isHigt1OutOfRange(higt1) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt12" label="脚位共平面高度 2" placeholder="输入..."
+							:style="{ backgroundColor: isHigt1OutOfRange(higt12) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt13" label="脚位共平面高度 3" placeholder="输入..."
+							:style="{ backgroundColor: isHigt1OutOfRange(higt13) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt14" label="脚位共平面高度 4" placeholder="输入..."
+							:style="{ backgroundColor: isHigt1OutOfRange(higt14) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="higt15" label="脚位共平面高度 5" placeholder="输入..."
+							:style="{ backgroundColor: isHigt1OutOfRange(higt15) ? 'red' : 'white' }" />
+					</van-row> -->
+					<van-row>
+						<van-field v-model="l1" label="L1" placeholder="输入..."
+							:style="{ backgroundColor: isL1OutOfRange(l1) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="l12" label="L1 2" placeholder="输入..."
+							:style="{ backgroundColor: isL1OutOfRange(l12) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="l13" label="L1 3" placeholder="输入..."
+							:style="{ backgroundColor: isL1OutOfRange(l13) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="l14" label="L1 4" placeholder="输入..."
+							:style="{ backgroundColor: isL1OutOfRange(l14) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="l15" label="L1 5" placeholder="输入..."
+							:style="{ backgroundColor: isL1OutOfRange(l15) ? 'red' : 'white' }" />
+					</van-row>
+
+					<van-row>
+						<van-field v-model="allLenth1" label="塑封体总长度 1" placeholder="输入..."
+							:style="{ backgroundColor: isAllLengthOutOfRange(allLenth1) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="allLenth2" label="塑封体总长度 2" placeholder="输入..."
+							:style="{ backgroundColor: isAllLengthOutOfRange(allLenth2) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="allLenth3" label="塑封体总长度 3" placeholder="输入..."
+							:style="{ backgroundColor: isAllLengthOutOfRange(allLenth3) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="allLenth4" label="塑封体总长度 4" placeholder="输入..."
+							:style="{ backgroundColor: isAllLengthOutOfRange(allLenth4) ? 'red' : 'white' }" />
+					</van-row>
+					<van-row>
+						<van-field v-model="allLenth5" label="塑封体总长度 5" placeholder="输入..."
+							:style="{ backgroundColor: isAllLengthOutOfRange(allLenth5) ? 'red' : 'white' }" />
+					</van-row>
+
+					<!-- 左侧共面性字段（5个） -->
+					<van-row>
+					  <van-field v-model="leftCoplanarity1" label="左侧共面性1" placeholder="输入左侧共面性1测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field v-model="leftCoplanarity2" label="左侧共面性2" placeholder="输入左侧共面性2测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field v-model="leftCoplanarity3" label="左侧共面性3" placeholder="输入左侧共面性3测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field v-model="leftCoplanarity4" label="左侧共面性4" placeholder="输入左侧共面性4测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field v-model="leftCoplanarity5" label="左侧共面性5" placeholder="输入左侧共面性5测量值..." />
+					</van-row>
+					
+					<!-- 右侧共面性字段（5个） -->
+					<van-row>
+					  <van-field v-model="rightCoplanarity1" label="右侧共面性1" placeholder="输入右侧共面性1测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field v-model="rightCoplanarity2" label="右侧共面性2" placeholder="输入右侧共面性2测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field v-model="rightCoplanarity3" label="右侧共面性3" placeholder="输入右侧共面性3测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field v-model="rightCoplanarity4" label="右侧共面性4" placeholder="输入右侧共面性4测量值..." />
+					</van-row>
+					<van-row>
+					  <van-field  v-model="rightCoplanarity5" label="右侧共面性5" placeholder="输入右侧共面性5测量值..." />
+					</van-row>
+
+				</van-col>
+			</van-row>
+
+
+
+
+
+			<div class='no custom-van-field'>
+
+				<van-field label="外观不良" input-align="right">
+					<template #input>
+						<van-radio-group v-model="waiguan" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+
+			</div>
+			<div v-if="type==3">
+				<van-row>
+					<van-field v-model="vacuumPressure" label="真空压" placeholder="输入..." input-align="right"
+						:style="{ backgroundColor: isVacuumPressureOutOfRange ? 'red' : 'white' }" @blur="checkInput" />
+				</van-row>
+				<van-row>
+					<van-field v-model="compressedAir" label="压缩空气" placeholder="输入..." input-align="right"
+						:style="{ backgroundColor: isCompressedAirOutOfRange ? 'red' : 'white' }" />
+				</van-row>
+				<van-row>
+
+			</div>
+			<!-- <div v-if="type==3" id="equipmentConfirmationItems">
+				
+				<van-row class="flex-container">
+					<van-col span="5" class="flex-label-col">
+						<span class="field-label">设备确认项：</span>
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						
+						<van-row>
+							<div class='no custom-van-field'>
+								<span class="field-label">正向控制记录表：</span>
+								<van-radio-group v-model="forwardControlRecordTable" direction="horizontal">
+									<van-radio name="OK">OK</van-radio>
+									<van-radio name="NG">NG</van-radio>
+								</van-radio-group>
+							</div>
+						</van-row>	
+						<van-row>
+							<div class='no custom-van-field'>
+								<span class="field-label">生产记录表：</span>
+								<van-radio-group v-model="productionRecordTable" direction="horizontal">
+									<van-radio name="OK">OK</van-radio>
+									<van-radio name="NG">NG</van-radio>
+								</van-radio-group>
+							</div>
+							
+						</van-row>
+					</van-col>
+				</van-row>
+
+				
+				
+
+			</div> -->
+			<div v-if="type==4" class='no custom-van-field'>
+
+
+				<van-field label="物料确认" input-align="right">
+					<template #input>
+						<van-radio-group v-model="partNumber" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div v-if="type==4" class='no custom-van-field'>
+
+				<van-field label="记录表" input-align="right">
+					<template #input>
+						<van-radio-group v-model="jilubiao" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<van-field label="首检" input-align="right">
+				<template #input>
+					<van-radio-group v-model="shoujian" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</template>
+			</van-field>
+
+			<van-field label="巡检" input-align="right">
+				<template #input>
+					<van-radio-group v-model="xunjian" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</template>
+			</van-field>
+
+
+
+			<div class='no'>
+				<van-field v-model="qc" label="品质人员" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">综合判定：</span>
+				<van-radio-group v-model="judgment" direction="horizontal">
+					<van-radio name="OK">OK</van-radio>
+					<van-radio name="NG">NG</van-radio>
+				</van-radio-group>
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">物料扣押：</span>
+				<van-checkbox-group v-model="wuliaokouya" direction="horizontal" :disabled="judgment !== 'NG'">
+					<van-checkbox name="NG">NG</van-checkbox>
+				</van-checkbox-group>
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">设备扣押：</span>
+				<van-checkbox-group v-model="shebeikouya" direction="horizontal" :disabled="judgment !== 'NG'">
+					<van-checkbox name="NG">NG</van-checkbox>
+				</van-checkbox-group>
+			</div>
+			<div class='no'>
+				<van-field v-model="comment" label="备注" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<van-tag type="success" size="large">{{tag}}</van-tag>
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup"
+					value-key="storeName" />
+			</van-popup>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					type: '', //物料类型
+					showScan: false,
+					btnName: '确认',
+					qc: '',
+					qcCode: '',
+					time: "",
+
+					errorMsg1: "",
+					errorMsg2: "",
+					columns: [],
+					showPicker: false,
+
+
+					locationCode: '',
+					materialContent: '',
+					pModel: "",
+
+					package: '',
+					testNumber: '',
+					shoujian: '',
+					jilubiao: '',
+					partNumber: '',
+					waiguan: '',
+					comment: '',
+
+					long: '',
+					long2: '',
+					long3: '',
+					long4: '',
+					long5: '',
+					longLeft: '',
+					longLeft2: '',
+					longLeft3: '',
+					longLeft4: '',
+					longLeft5: '',
+					longRight: '',
+					longRight2: '',
+					longRight3: '',
+					longRight4: '',
+					longRight5: '',
+					higt: '',
+					higt2: '',
+					higt3: '',
+					higt4: '',
+					higt5: '',
+					higt1: '',
+					higt12: '',
+					higt13: '',
+					higt14: '',
+					higt15: '',
+					l1: '',
+					l12: '',
+					l13: '',
+					l14: '',
+					l15: '',
+					allLenth1: '',
+					allLenth2: '',
+					allLenth3: '',
+					allLenth4: '',
+					allLenth5: '',
+					// 左侧共面性（对应数据库 leftCoplanarity1-5）
+					leftCoplanarity1: "",
+					leftCoplanarity2: "",
+					leftCoplanarity3: "",
+					leftCoplanarity4: "",
+					leftCoplanarity5: "",
+
+					// 右侧共面性（对应数据库 rightCoplanarity1-5）
+					rightCoplanarity1: "",
+					rightCoplanarity2: "",
+					rightCoplanarity3: "",
+					rightCoplanarity4: "",
+					rightCoplanarity5: "",
+					pName: '',
+					vacuumPressure: '',
+					compressedAir: '',
+					forwardControlRecordTable: '',
+					productionRecordTable: '',
+					shebeikouya: [],
+					wuliaokouya: [],
+					judgment: '',
+					thisData: {
+						FullLengthLeft: null,
+						FullLengthRight: null,
+						LandingHeightStandardLeft: null,
+						LandingHeightStandardRight: null,
+						LeftSideStandardLeft: null,
+						LeftSideStandardRight: null,
+						PinPlanarityStandard: null,
+						L1Left: null,
+						L1Right: null,
+						RightSideStandardLeft: null,
+						RightSideStandardRight: null,
+						AllLengthLeft: null,
+						AllLengthRight: null,
+
+					},
+					sizeMeasurements: '',
+					machineControl: '',
+					xunjian: '',
+					ps: '',
+					tag: '',
+
+				},
+				watch: {
+					shoujian(newVal) {
+						if (newVal) {
+							this.xunjian = null; // 如果选择了首检，则清空巡检
+						}
+					},
+					xunjian(newVal) {
+						if (newVal) {
+							this.shoujian = null; // 如果选择了巡检，则清空首检
+						}
+					},
+				},
+				computed: {
+					isVacuumPressureOutOfRange() {
+						const min = -10;
+						const max = -1.5;
+						return this.vacuumPressure !== '' && (parseFloat(this.vacuumPressure) < min || parseFloat(this
+							.vacuumPressure) > max);
+					},
+					isCompressedAirOutOfRange() {
+						const min = 0.4;
+						const max = 0.65;
+						return this.compressedAir !== '' && (parseFloat(this.compressedAir) < min || parseFloat(this
+							.compressedAir) > max);
+					}
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.qc = localStorage.userName;
+				},
+				created() {
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					this.type = type ? type : '4';
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+
+					if (this.type == 4) {
+						this.title = 'IC塑封站品质首检/巡检记录表'
+						this.ps = '检查频率：1.首件/每班，1模/每台，巡检1次/12小时；清模后，记录并备注，但不影响正常巡检频次；'
+						this.tag = 'JDW-WI-Q-Q007-03(e)'
+						$("#size").hide();
+						$("#equipmentConfirmationItems").hide();
+					} else if (this.type == 3) {
+						this.title = 'IC 成型站品质首检/巡检记录表'
+						this.ps = '1.检查频率：开班首检，巡检1次/12H，尺寸测量：5颗每次开班首检，测量项目为全长，单边左，单边右，落地高，L1，塑封体总长度。 '
+						this.tag = 'JDW-WI-Q-Q030-02(e)'
+						$("#testNumber").hide();
+						$("#jilubiao").hide();
+						$("#partNumber").hide();
+
+					}
+
+					if (locationCode != null) {
+						this.materialContent = materialContent
+						this.locationCode = locationCode
+					}
+
+				},
+				methods: {
+					isLongOutOfRange(value) {
+						return value !== '' && (parseFloat(value) < this.thisData.FullLengthLeft || parseFloat(value) >
+							this.thisData.FullLengthRight);
+					},
+					isLongLeftOutOfRange(value) {
+						return value !== '' && (parseFloat(value) < this.thisData.LeftSideStandardLeft || parseFloat(
+							value) > this.thisData.LeftSideStandardRight);
+					},
+					isLongRightOutOfRange(value) {
+						return value !== '' && (parseFloat(value) < this.thisData.RightSideStandardLeft || parseFloat(
+							value) > this.thisData.RightSideStandardRight);
+					},
+					isHigtOutOfRange(value) {
+						return value !== '' && (parseFloat(value) < this.thisData.LandingHeightStandardLeft ||
+							parseFloat(value) > this.thisData.LandingHeightStandardRight);
+					},
+					isHigt1OutOfRange(value) {
+						return value !== '' && parseFloat(value) > this.thisData.PinPlanarityStandard;
+					},
+					isL1OutOfRange(value) {
+						return value !== '' && (parseFloat(value) < this.thisData.L1Left || parseFloat(value) > this
+							.thisData.L1Right);
+					},
+					isAllLengthOutOfRange(value) {
+						return value !== '' && (parseFloat(value) < this.thisData.AllLengthLeft || parseFloat(value) >
+							this
+							.thisData.AllLengthRight);
+					},
+
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					checkInput() {
+						this.$forceUpdate(); // 触发 Vue 重新渲染
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+
+						var param = {
+							type: this.type,
+
+							cardId: self.materialContent,
+							equipmentCode: self.locationCode,
+							package: self.package,
+							time: self.time,
+							pName: self.pName,
+							testNumber: self.testNumber,
+							length: self.long,
+							length2: self.long2,
+							length3: self.long3,
+							length4: self.long4,
+							length5: self.long5,
+							longLeft: self.longLeft,
+							longLeft2: self.longLeft2,
+							longLeft3: self.longLeft3,
+							longLeft4: self.longLeft4,
+							longLeft5: self.longLeft5,
+							longRight: self.longRight,
+							longRight2: self.longRight2,
+							longRight3: self.longRight3,
+							longRight4: self.longRight4,
+							longRight5: self.longRight5,
+							higt: self.higt,
+							higt2: self.higt2,
+							higt3: self.higt3,
+							higt4: self.higt4,
+							higt5: self.higt5,
+							higt1: self.higt1,
+							higt12: self.higt12,
+							higt13: self.higt13,
+							higt14: self.higt14,
+							higt15: self.higt15,
+							l1: self.l1,
+							l12: self.l12,
+							l13: self.l13,
+							l14: self.l14,
+							l15: self.l15,
+							allLenth1: self.allLenth1,
+							allLenth2: self.allLenth2,
+							allLenth3: self.allLenth3,
+							allLenth4: self.allLenth4,
+							allLenth5: self.allLenth5,
+							waiguan: self.waiguan,
+							vacuumPressure: self.vacuumPressure,
+							compressedAir: self.compressedAir,
+							forwardControlRecordTable: self.forwardControlRecordTable,
+							productionRecordTable: self.productionRecordTable,
+							partNumber: self.partNumber,
+							jilubiao: self.jilubiao,
+							shoujian: self.shoujian,
+							qc: localStorage.userName,
+							qcCode: localStorage.userCode,
+							comment: self.comment,
+							wuliaokouya: self.wuliaokouya.includes("NG") ? "NG" : "",
+							shebeikouya: self.shebeikouya.includes("NG") ? "NG" : "",
+							sizeMeasurements: self.sizeMeasurements,
+							machineControl: self.machineControl,
+							xunjian: self.xunjian,
+							Tag: self.tag,
+							// 左侧共面性（对应数据库 leftCoplanarity1-5）
+							leftCoplanarity1: self.leftCoplanarity1,
+							leftCoplanarity2: self.leftCoplanarity2,
+							leftCoplanarity3: self.leftCoplanarity3,
+							leftCoplanarity4: self.leftCoplanarity4,
+							leftCoplanarity5: self.leftCoplanarity5,
+							
+							// 右侧共面性（对应数据库 rightCoplanarity1-5）
+							rightCoplanarity1: self.rightCoplanarity1,
+							rightCoplanarity2: self.rightCoplanarity2,
+							rightCoplanarity3: self.rightCoplanarity3,
+							rightCoplanarity4: self.rightCoplanarity4,
+							rightCoplanarity5: self.rightCoplanarity5,
+						}
+
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/postHung3',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											// 重置所有属性
+											self.errorMsg1 = '';
+											self.errorMsg2 = '';
+											self.columns = [];
+											self.showPicker = false;
+
+											self.locationCode = '';
+											self.materialContent = '';
+											self.pModel = '';
+
+											self.package = '';
+											self.testNumber = '';
+											self.shoujian = '';
+											self.jilubiao = '';
+											self.partNumber = '';
+											self.waiguan = '';
+											self.comment = '';
+
+											self.l1 = '';
+											self.l12 = '';
+											self.l13 = '';
+											self.l14 = '';
+											self.l15 = '';
+											self.higt1 = '';
+											self.higt12 = '';
+											self.higt13 = '';
+											self.higt14 = '';
+											self.higt15 = '';
+											self.higt = '';
+											self.higt2 = '';
+											self.higt3 = '';
+											self.higt4 = '';
+											self.higt5 = '';
+											self.longRight = '';
+											self.longRight2 = '';
+											self.longRight3 = '';
+											self.longRight4 = '';
+											self.longRight5 = '';
+											self.longLeft = '';
+											self.longLeft2 = '';
+											self.longLeft3 = '';
+											self.longLeft4 = '';
+											self.longLeft5 = '';
+											self.long = '';
+											self.long2 = '';
+											self.long3 = '';
+											self.long4 = '';
+											self.long5 = '';
+
+											self.allLenth1 = '';
+											self.allLenth2 = '';
+											self.allLenth3 = '';
+											self.allLenth4 = '';
+											self.allLenth5 = '';
+											self.pName = '';
+											self.vacuumPressure = '';
+											self.compressedAir = '';
+											self.forwardControlRecordTable = '';
+											self.productionRecordTable = '';
+											self.shebeikouya = [];
+											self.wuliaokouya = [];
+											self.judgment = '';
+											self.getNowTime();
+											self.thisData.FullLengthLeft = null;
+											self.thisData.FullLengthRight = null;
+											self.thisData.LandingHeightStandardLeft =
+												null;
+											self.thisData.LandingHeightStandardRight =
+												null;
+											self.thisData.LeftSideStandardLeft = null;
+											self.thisData.LeftSideStandardRight = null;
+											self.thisData.PinPlanarityStandard = null;
+											self.thisData.L1Left = null;
+											self.thisData.L1Right = null;
+											self.thisData.RightSideStandardLeft = null;
+											self.thisData.RightSideStandardRight = null;
+											self.sizeMeasurements = '';
+											self.machineControl = '';
+											self.shoujian = '';
+											self.xunjian = '';
+											// 左侧共面性字段清空
+											self.leftCoplanarity1 = '';
+											self.leftCoplanarity2 = '';
+											self.leftCoplanarity3 = '';
+											self.leftCoplanarity4 = '';
+											self.leftCoplanarity5 = '';
+											
+											// 右侧共面性字段清空
+											self.rightCoplanarity1 = '';
+											self.rightCoplanarity2 = '';
+											self.rightCoplanarity3 = '';
+											self.rightCoplanarity4 = '';
+											self.rightCoplanarity5 = '';
+										})
+									} else {
+										self.$toast(res.msg);
+
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					// 重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+							// 重置所有属性
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+							self.columns = [];
+							self.showPicker = false;
+
+							self.locationCode = '';
+							self.materialContent = '';
+							self.pModel = '';
+
+							self.package = '';
+							self.testNumber = '';
+							self.shoujian = '';
+							self.jilubiao = '';
+							self.partNumber = '';
+							self.waiguan = '';
+							self.comment = '';
+
+							self.l1 = '';
+							self.l12 = '';
+							self.l13 = '';
+							self.l14 = '';
+							self.l15 = '';
+							self.higt1 = '';
+							self.higt12 = '';
+							self.higt13 = '';
+							self.higt14 = '';
+							self.higt15 = '';
+							self.higt = '';
+							self.higt2 = '';
+							self.higt3 = '';
+							self.higt4 = '';
+							self.higt5 = '';
+							self.longRight = '';
+							self.longRight2 = '';
+							self.longRight3 = '';
+							self.longRight4 = '';
+							self.longRight5 = '';
+							self.longLeft = '';
+							self.longLeft2 = '';
+							self.longLeft3 = '';
+							self.longLeft4 = '';
+							self.longLeft5 = '';
+							self.long = '';
+							self.long2 = '';
+							self.long3 = '';
+							self.long4 = '';
+							self.long5 = '';
+
+
+							self.allLenth1 = '';
+							self.allLenth2 = '';
+							self.allLenth3 = '';
+							self.allLenth4 = '';
+							self.allLenth5 = '';
+							self.pName = '';
+							self.vacuumPressure = '';
+							self.compressedAir = '';
+							self.forwardControlRecordTable = '';
+							self.productionRecordTable = '';
+							self.shebeikouya = [];
+							self.wuliaokouya = [];
+							self.judgment = '';
+							self.getNowTime();
+							self.thisData.FullLengthLeft = null;
+							self.thisData.FullLengthRight = null;
+							self.thisData.LandingHeightStandardLeft = null;
+							self.thisData.LandingHeightStandardRight = null;
+							self.thisData.LeftSideStandardLeft = null;
+							self.thisData.LeftSideStandardRight = null;
+							self.thisData.PinPlanarityStandard = null;
+							self.thisData.L1Left = null;
+							self.thisData.L1Right = null;
+							self.thisData.RightSideStandardLeft = null;
+							self.thisData.RightSideStandardRight = null;
+							self.sizeMeasurements = '';
+							self.machineControl = '';
+							self.shoujian = '';
+							self.xunjian = '';
+							// 左侧共面性字段清空
+							self.leftCoplanarity1 = '';
+							self.leftCoplanarity2 = '';
+							self.leftCoplanarity3 = '';
+							self.leftCoplanarity4 = '';
+							self.leftCoplanarity5 = '';
+							
+							// 右侧共面性字段清空
+							self.rightCoplanarity1 = '';
+							self.rightCoplanarity2 = '';
+							self.rightCoplanarity3 = '';
+							self.rightCoplanarity4 = '';
+							self.rightCoplanarity5 = '';
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: {
+								self.onFocus(type);
+							}
+							case 1: //工卡			
+								if (this.boxCode) {
+									self.onFocus(type);
+								}
+
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+						}
+					},
+
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								type: this.type,
+								equipmentCode: self.locationCode,
+								kind: 1
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg1 = ''
+									// self.$refs.filed2.focus();
+									// self.locationCode = res.data.EquipmentCode;
+									self.pName = res.data.PModel;
+									console.log(self.type);
+									if (self.type == 4) {
+										console.log("4");
+										self.package = res.data.PackageName;
+									} else {
+										console.log("3");
+										self.package = res.data.Package
+									}
+									// self.package = res.data.PackageName;
+
+									self.thisData = res.data;
+									self.materialContent = res.data.CardID;
+
+								} else {
+									self.$toast(res.msg);
+
+									self.$refs.filed2.focus();
+								}
+								console.log("thisData", self.thisData);
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+
+						this.showPicker = false;
+					}
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+
+			.error {
+				background-color: red;
+			}
+		</style>
+	</body>
+</html>

@@ -1,0 +1,47 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion '30.0.2'
+
+    defaultConfig {
+        applicationId "com.honeywell.barcodeexample"
+        minSdkVersion 16
+        targetSdkVersion 17
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.6
+        targetCompatibility = 1.6
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                if (variant.buildType.name.equals('release')) {
+                    output.outputFile = new File(outputFile.parent,
+                            "BarcodeExample" + "-release.apk")
+                } else if (variant.buildType.name.equals('debug')) {
+                    output.outputFile = new File(outputFile.parent,
+                            "BarcodeExample" + "-debug.apk")
+                }
+            }
+        }
+    }
+
+    dependencies {
+        compile project(":DataCollectionLib")
+    }
+}
+
+dependencies {
+    compile files('libs\\Scanner.jar')
+    compile files('libs\\SDK_release_v2.1.1.jar')
+}

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC首检</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<!-- <van-cell value="频率：每批" /> -->
+			</div>
+			<div>
+				<van-field label="工序" input-align="right">
+					<template #input>
+						<van-radio-group v-model="step" direction="horizontal">
+							<van-radio name="WB1">WB1</van-radio>
+							<van-radio name="WB2">WB2</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div class='no'>
+				<van-field v-model="qc" label="操机人员" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="materialContent" label="工卡号" autofocus input-align="right" placeholder="请输入或扫描工卡号"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+			<div id='no'>
+				<van-field v-model="locationCode" label="机台号" input-align="right" placeholder="请输入或扫描设备" ref="filed0"
+					required :error-message="errorMsg1" error-message-align="right" @keyup.enter.native="onEnter(1)" />
+			</div>
+			<div>
+				<van-field disabled v-model="pModel" label="产品名称" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="starttime" label="开始时间" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			
+			<div class='no'>
+				<van-field v-model="drawingVersion" label="图纸版本号" input-align="right" placeholder="请输入" ref="filed1"
+					required error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="wireSize" label="铜线尺寸" input-align="right" placeholder="请输入" ref="filed2" required
+					error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="inQty" label="来料数量/K" :label-width="260" input-align="right" placeholder="请输入"
+					ref="filed3" required error-message-align="right" />
+			</div>
+		
+			<div>
+				<van-field input-align="right" readonly clickable name="datetimePicker" :value="endtime" label="结束时间"
+					placeholder="点击选择时间" @click="showPicker5 = true" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="defectiveQuantity" label="不良数量" input-align="right" placeholder="请输入" ref="filed4"
+					required error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="outQty" label="产出数量/K" input-align="right" placeholder="请输入" ref="filed5" required
+					error-message-align="right" />
+			</div>
+			
+			<div class='no'>
+				<van-field v-model="yield" label="良率" input-align="right" placeholder="请输入" ref="filed3" required
+					error-message-align="right" />
+			</div>
+			<div class='no'>
+				<van-field v-model="boxCodes" label="料盒号1" input-align="right" placeholder="请输入" ref="filed1"
+					error-message-align="right" />
+			</div>
+			<!-- 自检条1 + 自检结果1（原格式，保留） -->
+			<div>
+				<van-field input-align="right" readonly clickable name="numberPicker" :value="checklist1" label="自检条1"
+					placeholder="点击选择条数" @click="showPicker1 = true" />
+			</div>
+			<div class='no'>
+				<van-field label="自检结果1" input-align="right">
+					<template #input>
+						<van-radio-group v-model="CheckResult1" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div class='no'>
+				<van-field v-model="boxCode2" label="料盒号2" input-align="right" placeholder="请输入" ref="filed1"
+					error-message-align="right" />
+			</div>
+			<!-- 自检条2（修改为Picker选择器，同自检条1） -->
+			<div>
+				<van-field input-align="right" readonly clickable name="numberPicker" :value="checklist2" label="自检条2"
+					placeholder="点击选择条数" @click="showPicker2 = true" />
+			</div>
+			<!-- 自检结果2（修改为Radio单选框，同自检结果1） -->
+			<div class='no'>
+				<van-field label="自检结果2" input-align="right">
+					<template #input>
+						<van-radio-group v-model="CheckResult2" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div class='no'>
+				<van-field v-model="boxCode3" label="料盒号3" input-align="right" placeholder="请输入" ref="filed1"
+					error-message-align="right" />
+			</div>
+			<!-- 自检条3（修改为Picker选择器，同自检条1） -->
+			<div>
+				<van-field input-align="right" readonly clickable name="numberPicker" :value="checklist3" label="自检条3"
+					placeholder="点击选择条数" @click="showPicker3 = true" />
+			</div>
+			<!-- 自检结果3（修改为Radio单选框，同自检结果1） -->
+			<div class='no'>
+				<van-field label="自检结果3" input-align="right">
+					<template #input>
+						<van-radio-group v-model="CheckResult3" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div class='no'>
+				<van-field v-model="boxCode4" label="料盒号4" input-align="right" placeholder="请输入" ref="filed1"
+					error-message-align="right" />
+			</div>
+			<!-- 自检条4（修改为Picker选择器，同自检条1） -->
+			<div>
+				<van-field input-align="right" readonly clickable name="numberPicker" :value="checklist4" label="自检条4"
+					placeholder="点击选择条数" @click="showPicker4 = true" />
+			</div>
+			<!-- 自检结果4（修改为Radio单选框，同自检结果1） -->
+			<div class='no'>
+				<van-field label="自检结果4" input-align="right">
+					<template #input>
+						<van-radio-group v-model="CheckResult4" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+
+			<div class='no'>
+				<van-field v-model="status" label="状态" input-align="right" placeholder="请输入"
+					error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入" :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<van-tag type="success" size="large">{{tag}}</van-tag>
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+			<!-- 自检条1选择器弹窗（原） -->
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup"
+					value-key="storeName" />
+			</van-popup>
+			<van-popup v-model="showPicker1" position="bottom">
+				<van-picker show-toolbar :columns="columns1" @confirm="onConfirm1" @cancel="showPicker1 = false" />
+			</van-popup>
+			<!-- 新增：自检条2-4选择器弹窗 -->
+			<van-popup v-model="showPicker2" position="bottom">
+				<van-picker show-toolbar :columns="columns1" @confirm="onConfirm2" @cancel="showPicker2 = false" />
+			</van-popup>
+			<van-popup v-model="showPicker3" position="bottom">
+				<van-picker show-toolbar :columns="columns1" @confirm="onConfirm3" @cancel="showPicker3 = false" />
+			</van-popup>
+			<van-popup v-model="showPicker4" position="bottom">
+				<van-picker show-toolbar :columns="columns1" @confirm="onConfirm4" @cancel="showPicker4 = false" />
+			</van-popup>
+			<van-popup v-model="showPicker5" position="bottom">
+				<van-datetime-picker type="datetime" @confirm="onConfirm" v-model="currentDate"
+					@cancel="showPicker1 = false" :columns-order="['month', 'day', 'year', 'hour', 'minute']"
+					:formatter="formatter" :min-date="minDate" :max-date="maxDate" />
+			</van-popup>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					type: '', //物料类型
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					qc: '',
+					qcCode: '',
+
+					locationCode: '', //货架
+					materialContent: '', //条码内容
+					errorMsg1: "",
+					errorMsg2: "",
+					pModel: "",
+					time: "",
+					package: "",
+					remark: '',
+					shebeikouya: [],
+					wuliaokouya: [],
+
+					tag: "",
+
+					starttime: '',
+					drawingVersion: '',
+					wireSize: '',
+					inQty: '',
+					endtime: '',
+					defectiveQuantity: '',
+					outQty: '',
+					boxCodes: '',
+					boxCode2: '',
+					boxCode3: '',
+					boxCode4: '',
+					batchselfInspection: '',
+					yield: '',
+					status: '',
+					step: '',
+					checklist1: '',
+					CheckResult1: '',
+					checklist2: '',
+					CheckResult2: '',
+					checklist3: '',
+					CheckResult3: '',
+					checklist4: '',
+					CheckResult4: '',
+					// 新增：自检条2-4弹窗控制字段
+					showPicker1: false,
+					showPicker2: false,
+					showPicker3: false,
+					showPicker4: false,
+					columns1: ['1条', '2条', '3条', '4条', '5条',
+						'6条', '7条', '8条', '9条', '10条',
+						'11条', '12条', '13条', '14条', '15条',
+						'16条', '17条', '18条', '19条', '20条'
+					],
+					showPicker5:false,
+					minDate: new Date(2024, 0, 1),
+					maxDate: new Date(),
+					currentDate: new Date(),
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.qc = localStorage.userName;
+
+				},
+				created() {
+
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+
+					this.title = 'IC焊线生产记录'
+
+					if (locationCode != null) {
+						this.materialContent = materialContent
+						this.locationCode = locationCode
+					}
+
+				},
+				methods: {
+					
+					formatter(type, val) {
+						if (type === 'year') {
+							return val + '-';
+						}
+						if (type === 'month') {
+							return val + '-';
+						}
+						if (type === 'day') {
+							return val + '  ';
+						}
+						if (type === 'hour') {
+							return val + ':';
+						}
+						return val;
+					},
+					onConfirm(time) {
+						// 格式化日期
+					
+						const year = time.getFullYear();
+						const month = String(time.getMonth() + 1).padStart(2, '0'); // 补零
+						const day = String(time.getDate()).padStart(2, '0'); // 补零
+						const hours = String(time.getHours()).padStart(2, '0'); // 补零
+						const minutes = String(time.getMinutes()).padStart(2, '0'); // 补零
+					
+					
+						// 格式化为 "2025-04-15 08:32"
+						const formattedTime = `${year}-${month}-${day} ${hours}:${minutes}:00`;
+					
+						this.endtime = formattedTime;
+						this.showPicker5 = false;
+					},
+					// 自检条1选择确认（原）
+					onConfirm1(value) {
+						this.checklist1 = value;
+						this.showPicker1 = false;
+					},
+					// 新增：自检条2选择确认
+					onConfirm2(value) {
+						this.checklist2 = value;
+						this.showPicker2 = false;
+					},
+					// 新增：自检条3选择确认
+					onConfirm3(value) {
+						this.checklist3 = value;
+						this.showPicker3 = false;
+					},
+					// 新增：自检条4选择确认
+					onConfirm4(value) {
+						this.checklist4 = value;
+						this.showPicker4 = false;
+					},
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.starttime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+						if (self.step == '') {
+							// self.$toast('请确认输入的UPH是否获取到数值');
+							self.$dialog.alert({
+								title: '错误',
+								message: '请输入工序',
+							}).then(() => {
+								// on close
+							});
+							return;
+						}
+						var param = {
+							cardID: self.materialContent,
+							equipmentCode: self.locationCode,
+							time: self.time,
+							qc: localStorage.userName,
+							qcCode: localStorage.userCode,
+							remark: self.remark,
+							starttime: self.starttime,
+							drawingVersion: self.drawingVersion,
+							wireSize: self.wireSize,
+							inQty: self.inQty,
+							endtime: self.endtime,
+							defectiveQuantity: self.defectiveQuantity,
+							outQty: self.outQty,
+							boxCodes: self.boxCodes,
+							boxCode2: self.boxCode2,
+							boxCode3: self.boxCode3,
+							boxCode4: self.boxCode4,
+							checklist1: self.checklist1,
+							CheckResult1: self.CheckResult1,
+							checklist2: self.checklist2,
+							CheckResult2: self.CheckResult2,
+							checklist3: self.checklist3,
+							CheckResult3: self.CheckResult3,
+							checklist4: self.checklist4,
+							CheckResult4: self.CheckResult4,
+							step: self.step,
+							batchselfInspection: self.batchselfInspection,
+							yield: self.yield,
+							status: self.status,
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/Postwbinspection',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											// self.reset()
+										})
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+						self.reasons.splice(index, 1)
+					},
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+							// 重置所有属性（新增：重置自检相关字段和弹窗）
+							self.locationCode = '';
+							self.materialContent = '';
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+							self.pModel = '';
+							self.checklist1 = '';
+							self.CheckResult1 = '';
+							self.checklist2 = '';
+							self.CheckResult2 = '';
+							self.checklist3 = '';
+							self.CheckResult3 = '';
+							self.checklist4 = '';
+							self.CheckResult4 = '';
+							self.showPicker1 = self.showPicker2 = self.showPicker3 = self.showPicker4 =
+							false;
+							self.getNowTime();
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0:
+								self.onFocus(type);
+								break;
+							case 1: //工卡			
+								self.onFocus(type);
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+							case 4: //缺陷
+								var isExist = false;
+								for (var index = 0; index < self.reasons.length; index++) {
+									var element = self.reasons[index];
+									if (self.txtReason == element) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.reasons.push(self.txtReason)
+								} else {
+									self.$toast('已扫描过相同缺陷');
+								}
+								self.txtReason = ''
+								break;
+						}
+					},
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						if (self.step == '') {
+							// self.$toast('请确认输入的UPH是否获取到数值');
+							self.$dialog.alert({
+								title: '错误',
+								message: '请输入工序',
+							}).then(() => {
+								// on close
+							});
+							return;
+						}
+						$.ajax({
+							url: serviceUrl + '/api/pda/getWbinspection',
+							type: 'GET',
+							data: {
+								cardId: self.materialContent,
+								step:self.step
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg1 = ''
+									self.$refs.filed2.focus();
+
+									if (res.data.wbinspectionmodel != null) {
+										// 从wbinspectionmodel中读取Res_wbinspection实体的所有字段并赋值
+										let model = res.data.wbinspectionmodel;
+
+										// 基础字段赋值
+										self.materialContent = model.CardID; // 物料ID
+										self.locationCode = model.EquipmentCode; // 设备编码
+										self.inspectionTime = model.Time; // 质检时间
+										self.qcName = model.QC; // 质检人员
+										self.qcCode = model.QCCode; // 质检人员编码
+										self.remark = model.Remark; // 备注
+										self.startTime = model.StartTime; // 开始时间
+										self.drawingVersion = model.DrawingVersion; // 图纸版本
+										self.wireSize = model.WireSize; // 线径尺寸
+										self.inQty = model.InQty; // 入库数量
+										self.endTime = model.EndTime; // 结束时间
+										self.defectiveQuantity = model.DefectiveQuantity; // 不合格数量
+										self.outQty = model.OutQty; // 出库数量
+										self.boxCodes = model.BoxCodes; // 箱码
+										self.boxCode2 = model.BoxCode2;
+										self.boxCode3 = model.BoxCode3;
+										self.boxCode4 = model.BoxCode4;
+										self.status = model.status; // 状态
+										self.batchSelfInspection = model.BatchSelfInspection; // 批次自检
+										self.yield = model.Yield; // 合格率
+										self.createdTime = model.CreatedTime; // 记录创建时间
+
+										// 计算合格率（如果后端返回的合格率为空，前端重新计算）
+										if (self.yield == null || self.yield === undefined) {
+											self.yield = self.outQty !== 0 ?
+												Number((self.outQty / self.inQty * 100).toFixed(2)) :
+												0;
+										}
+
+										// 质检检查项/结果/步骤字段
+										self.checklist1 = model.checklist1; // 检查项1
+										self.CheckResult1 = model.CheckResult1; // 检查结果1
+										self.checklist2 = model.checklist2; // 检查项2
+										self.CheckResult2 = model.CheckResult2; // 检查结果2
+										self.checklist3 = model.checklist3; // 检查项3
+										self.CheckResult3 = model.CheckResult3; // 检查结果3
+										self.checklist4 = model.checklist4; // 检查项4
+										self.CheckResult4 = model.CheckResult4; // 检查结果4
+										self.step = model.step; // 质检步骤
+
+										// 兼容cardInfo中的字段（如果有需要）
+										if (res.data.cardInfo) {
+											self.package = res.data.cardInfo.PackageName;
+											self.pModel = res.data.cardInfo.PartName;
+											self.actualLettering = res.data.cardInfo.CustomerCode;
+										}
+
+										console.log("已加载历史质检数据：", model);
+									} else {
+										self.inQty = res.data.cardInfo.CurrentQuantity;
+										self.starttime=res.data.cardInfo.ArriveStepTime;
+										self.package = res.data.cardInfo.PackageName;
+										self.pModel = res.data.cardInfo.PartName;
+										self.materialContent = res.data.cardInfo.CardID;
+										self.locationCode = res.data.cardInfo.EquipmentCode;
+										self.actualLettering = res.data.cardInfo.CustomerCode;
+										console.log(self.numberOfSample);
+									}
+
+
+								} else {
+									self.$toast(res.msg);
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+
+</html>

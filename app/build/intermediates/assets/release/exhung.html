@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC巡查</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head><!--  -->
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+
+			</div>
+			<div>
+				<!-- Vant Overlay 遮罩层，v-if 绑定 loading 状态 -->
+				<van-overlay v-if="loading" :show="loading" z-index="2000">
+					<div class="loading-container">
+						<!-- 加载动画 -->
+						<van-loading size="24px" type="spinner" color="white" />
+						<!-- 显示加载文字 -->
+						<span class="loading-text">数据加载中...</span>
+					</div>
+				</van-overlay>
+				<div v-if="!charged">
+					<van-list v-model="loading" :error.sync="error" error-text="请求失败，点击重新加载" @load="onLoad">
+						<van-cell v-for="item in collapseList" :key="item">
+
+							<a :href="hrefCode + item.LocationCode + '&CardID='"
+								 style="text-decoration: none;"
+								          :style="{ color: item.MinHoursAgo > colorThreshold ? 'red' : '#007BFF' }">
+								机台号：{{ item.LocationCode }} 距上次检测 {{ item.MinHoursAgo }}小时
+
+							</a>
+						</van-cell>
+					</van-list>
+				</div>
+
+				<van-collapse v-if="charged" v-model="activeName1" accordion @change="onCollapseChange">
+
+					<van-collapse-item v-for="(item, index) in collapseItems" :key="index"
+						:title="item.KeyRegulatoryIssues" :name="item.ProductModel">
+						<template #title>
+							<div class="collapse-item-content" :class="{ 'blinking-text': item.Count !== 0 }">
+								<div class="left-column">{{ item.KeyRegulatoryIssues }}</div>
+								<div class="right-column">{{ item.ProductModel }}</div>
+							</div>
+						</template>
+						<van-list v-model="loading" :error.sync="error" error-text="请求失败，点击重新加载" @load="onLoad">
+							<van-cell v-for="item in list" :key="item">
+								<a :href="hrefCode + item.EquipmentCode + '&CardID=' + item.CardID"
+									style="text-decoration: none; color: #007BFF;">
+									{{ item.EquipmentCode }} — {{ item.CardID }} — {{ item.ShiftCode }}
+								</a>
+
+							</van-cell>
+						</van-list>
+					</van-collapse-item>
+				</van-collapse>
+				<div class="btm_btn">
+					<van-col span="10">
+						<van-button type="info" size="large" color="#ccc" block square
+							@click="charged=!charged">切换</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" size="large" block square @click="reset">跳过</van-button>
+					</van-col>
+				</div>
+
+			</div>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					title: '重点客户监管',
+
+					activeName1: '2',
+					activeName2: '1',
+					show: true,
+					charged: false,
+					list: null,
+					error: false,
+					loading: false,
+					collapseItems: null,
+					collapseList: null,
+					StationCode: '',
+					hrefCode: '',
+					colorThreshold: 168
+				},
+				created() {
+					var self = this;
+					var Process = getQueryVariable('Process'); //线边仓库类型或仓库类型	
+					$.ajax({
+						url: serviceUrl + '/api/pda/getCollapseItems',
+						type: 'GET',
+						data: {
+							Process: Process
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function(XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function(res) {
+							if (res.code == 200) {
+								if (res.data != null) {
+									console.log(res.data);
+									self.collapseItems = res.data.task;
+									self.collapseList = res.data.List1;
+									self.StationCode = res.data.task[0].StationCode;
+									// self.StationCode=res.data.[0].StationCode;
+									// console.log(self.StationCode);
+									if (self.StationCode == 1160) {
+										self.hrefCode = 'hung1.html?type=2&EquipmentCode='
+										self.title = 'WB客户监管',
+										self.colorThreshold=46
+									} else if (self.StationCode == 1360) {
+										self.hrefCode = 'hung5.html?type=5&EquipmentCode='
+										self.title = '测试客户监管'
+									} else if (self.StationCode == 1040) {
+										self.title = 'DB客户监管'
+										self.colorThreshold=46
+										self.hrefCode = 'hung1.html?type=1&EquipmentCode='
+									} else if (self.StationCode == 1200) {
+										self.title = '注塑客户监管'
+										self.colorThreshold=10
+										self.hrefCode = 'hung4.html?type=4&EquipmentCode='
+									} else if (self.StationCode == 1300) {
+										self.title = '切筋客户监管'
+										self.hrefCode = 'hung4.html?type=3&EquipmentCode='
+										self.colorThreshold=10
+									}
+									console.log(self.hrefCode);
+								} else {
+									self.$toast("没有工卡");
+								}
+
+
+							} else {
+								self.$toast(res.msg);
+
+							}
+						},
+						error: function() {
+							self.$toast('网络异常');
+						}
+					})
+
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					//重置
+					reset: function() {
+						// const type = 'someValue'; // 设置 `type` 的值
+						window.location.href = this.hrefCode;
+					},
+
+
+					onLoad() {
+
+						this.loading = false;
+
+					},
+					onCollapseChange(activeNames) {
+						// activeNames 是当前展开的面板的 name 数组
+						console.log("当前展开的项: ", activeNames);
+
+						var self = this;
+						// 数据加载完毕，关闭遮罩层
+
+						self.list = null
+						if (activeNames != "") {
+							self.loading = true;
+							$.ajax({
+								url: serviceUrl + '/api/pda/getCollapseItemsDetail',
+								type: 'GET',
+								data: {
+									Process: self.StationCode,
+									PModel: activeNames
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.list = res.data;
+									} else {
+										self.$toast(res.msg);
+
+									}
+									// 数据加载完毕，关闭遮罩层
+									self.loading = false;
+								},
+								error: function() {
+									self.$toast('网络异常');
+									// 数据加载完毕，关闭遮罩层
+									self.loading = false;
+								}
+							})
+
+						}
+
+
+					},
+					methodForPanel1() {
+						console.log("执行面板1的相关操作");
+						// 在这里添加面板1的展开时要执行的逻辑
+					},
+					methodForPanel2() {
+						console.log("执行面板2的相关操作");
+						// 在这里添加面板2的展开时要执行的逻辑
+					},
+					methodForPanel3() {
+						console.log("执行面板3的相关操作");
+						// 在这里添加面板3的展开时要执行的逻辑
+					}
+
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.blinking-text {
+				animation: blinker 1s linear infinite;
+				color: red;
+				/* 可根据需要设置文字颜色 */
+			}
+
+			@keyframes blinker {
+				50% {
+					opacity: 0;
+				}
+			}
+
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.loading-container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				height: 100vh;
+				/* 全屏高度，确保遮罩层中的内容垂直居中 */
+				color: white;
+				/* 设置文字颜色为白色 */
+			}
+
+			.loading-text {
+				margin-top: 10px;
+				font-size: 16px;
+				color: white;
+				/* 确保加载文字的颜色为白色 */
+			}
+
+			.collapse-item-content {
+				display: flex;
+				justify-content: space-between;
+
+			}
+
+			.left-column {
+				flex: 1;
+				text-align: left;
+			}
+
+			.right-column {
+				flex: 1;
+				text-align: right;
+			}
+
+			.text-red {
+				color: red;
+			}
+		</style>
+	</body>
+
+</html>

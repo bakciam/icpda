@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>工卡标签查询</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-field v-model="cardID" label="工卡" input-align="right" placeholder="请输入或扫描工卡"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required />
+			</div>
+			<!-- <div>
+				<van-cell title="标签类型选择" is-link arrow-direction="down" :value="typeName" @click="showPicker = true" />
+			</div> -->
+			<van-cell-group title="选择标签类型">
+				<van-radio-group v-model="type">
+					<van-cell-group>
+						<van-cell title="临时标签" clickable @click="onChooseType('0')">
+							<template #right-icon>
+								<van-radio name="0" />
+							</template>
+						</van-cell>
+						<van-cell title="QA标签" clickable @click="onChooseType('1')">
+							<template #right-icon>
+								<van-radio name="1" />
+							</template>
+						</van-cell>
+						<van-cell title="外箱标签" clickable @click="onChooseType('2')">
+							<template #right-icon>
+								<van-radio name="2" />
+							</template>
+						</van-cell>
+					</van-cell-group>
+				</van-radio-group>
+			</van-cell-group>
+			<van-cell-group title="对应标签列表">
+				<div class="confirm_dellist" v-if="showEmpty == false">
+					<div class="list_has_del" v-for="(item,index) in labels">
+						<span>{{index+1}}、标签号：{{item}}</span>
+					</div>
+				</div>
+				<van-empty image="search" description="未找到工卡" v-else />
+			</van-cell-group>
+			<!-- <div>
+				<van-cell value="对应标签列表" />
+			</div>
+			<div class="confirm_dellist">
+				<div class="list_has_del" v-for="(item,index) in labels">
+					<span>{{index+1}}、标签号：{{item}}</span>
+				</div>
+			</div> -->
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+			</van-row>
+		</div>
+
+		<div>
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup" />
+			</van-popup>
+		</div>
+
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showScan: false,
+				Barcode: '',
+				title: '标签查询',
+
+				labels: [],//已扫临时标签
+				cardID: '',//工卡
+
+				type: '0',
+				typeName: '临时',
+				columns: ['临时', 'QA', '外箱'],
+				showPicker: false,//是否显示类型
+				showEmpty: false
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+
+				//搜索
+				search: function () {
+					var self = this;
+					self.labels = []
+					var itype = parseInt(self.type) + 1
+					$.ajax({
+						url: serviceUrl + '/api/pda/querylabels',
+						type: 'GET',
+						data: {
+							cardID: self.cardID,
+							type: itype
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.labels = res.data;
+								if (res.data.length == 0) {
+									self.showEmpty = true;
+								} else {
+									self.showEmpty = false;
+								}
+							} else {
+								self.$toast(res.msg);
+								self.showEmpty = true;
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+							self.showEmpty = true;
+						}
+					})
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.typeName = '临时';
+						self.type = '0';
+						self.labels = [];
+						self.cardID = '';
+						self.showEmpty = false;
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //标签			
+							self.search()
+							break;
+						default:
+							break;
+					}
+				},
+
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						// self.$refs.filed2.blur();
+					}
+				},
+
+				//确认选择类型
+				onConfirmPopup: function (value, index) {
+					this.typeName = value;
+					this.type = index;
+					this.showPicker = false;
+
+					this.search()
+				},
+
+				onChooseType:function(type){
+					this.type = type
+					this.search()
+				},
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.Barcode = codedata.Barcode;
+					if (this.menuType == 1) { //仓位
+
+					} else if (this.menuType == 2) {//物料
+
+					}
+				},
+				onClose: function (action, done) {
+					if (action === "confirm") {
+						return done(false);
+					} else {
+						return done();
+						this.showScan = false
+					}
+				},
+
+			}
+		})
+	</script>
+</body>
+
+</html>

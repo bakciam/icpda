@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>成品入库</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<div><van-cell title="仓库名称" v-model="value" /></div>
+			</div>
+			<div v-if="type==1">
+				<div><van-cell title="入库单" v-model="value1"  is-link @click="showDilog(1)" /></div>
+				<van-collapse v-model="activeNames">
+					<van-collapse-item name="1">
+							<div slot="title">入库清单
+								<div class="buton_list">
+									<van-button type="info" @click.stop="setScanType">核算</van-button>
+								</div>
+							</div>
+							<div><van-cell title="箱号1" v-model="value1" /></div>
+							<div><van-cell title="箱号2" v-model="value1" /></div>
+						</van-collapse-item>
+				</van-collapse>	
+			</div>
+			<div v-if="type==2">
+				<div><van-cell title="出库单" v-model="value1"  is-link @click="showDilog(1)" /></div>
+				<van-collapse v-model="activeNames">
+					<van-collapse-item name="1">
+							<div slot="title">出库清单
+								<div class="buton_list">
+									<van-button type="info" @click.stop="setScanType">核算</van-button>
+								</div>
+							</div>
+							<div><van-cell title="箱号1" v-model="value1" /></div>
+							<div><van-cell title="箱号2" v-model="value1" /></div>
+						</van-collapse-item>
+				</van-collapse>
+			</div>
+			<div class="btm_btn">
+				<van-row>
+				  <van-col span="10"><van-button type="info" color="#ccc" block square>重置</van-button></van-col>
+				  <van-col span="14"><van-button type="info" block square>{{btnName}}</van-button></van-col>
+				</van-row>				
+			</div>
+			<div>
+				<van-dialog
+				  :title="dialogTitle"
+				  v-model="showScan"
+				  show-cancel-button
+				  :before-close="onClose"
+				  @confirm="onConfirm"
+				>
+				  <van-cell-group>
+					<van-field v-model="Barcode" :label="dialogLabel" input-align="right" placeholder="扫描或手动输入" />
+				  </van-cell-group>
+				</van-dialog>	
+			</div>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					showScan: false,
+					Barcode: '',
+					title:'线边库',
+					type:1,//1入库 2 出库
+					dialogTitle:'',
+					dialogLabel:'',
+					scanType:'',
+					activeNames: ['1'],
+					value:'',
+					value1:'',//入库单
+					menuType:''
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					window.scanCode = this.scanCode;
+				},
+				created() {
+					var type = getQueryVariable('type');
+					this.type = type ? type : '1';
+					if(this.type==1){
+						this.btnName = '入库'
+						this.title = '成品入库'
+						
+					}else if(this.type==2){
+						this.btnName = '出库'
+						this.title = '成品出库'
+						
+					}
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					showDilog: function(menuType) {
+						this.menuType = menuType;
+						if(menuType==1){
+							this.dialogTitle='入库单'
+							this.dialogLabel='入库单'
+						}
+						this.showScan = true;
+						this.Barcode = '';			
+					},
+					scanCode: function(data) { //监听扫码事件
+						var codedata = JSON.parse(data);
+						this.Barcode = codedata.Barcode;
+						if(this.menuType==1) {//入库单
+							
+						} else if(this.menuType==2) {//核算
+							
+						}
+					},
+					setScanType(){
+						this.menuType = 2;
+						this.$toast('可直接用扫描枪扫描核算');
+					},
+					onClose: function(action, done) {
+						if(action === "confirm") {
+							return done(false);
+						} else {
+							return done();
+							this.showScan = false
+						}
+					},
+					onConfirm: function() {
+						var self = this;
+						this.showScan = false;
+						switch(this.menuType) {
+							case 1: //入库单			
+								this.value1=this.Barcode
+								break;
+							default:
+								break;
+						}
+			
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

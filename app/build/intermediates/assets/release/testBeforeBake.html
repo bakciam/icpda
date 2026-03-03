@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>晶圆上架</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+
+				<div id='equipmentCode'>
+					<van-field v-model="locationCode" label="设备" input-align="right" placeholder="请扫描设备码"
+						@keyup.enter.native="onEnter(0)" autofocus ref="filed1" required :error-message="errorMsg1"
+						error-message-align="right" />
+				</div>
+				<div id='box'>
+					<van-field v-model="boxCode" label="盒号" input-align="right" placeholder="请输入或扫描盒号"
+						@keyup.enter.native="onEnter(1)" ref="filed3" required :error-message="errorMsg1"
+						error-message-align="right" />
+				</div>
+				<div>
+					<van-field v-model="materialContent" :label="materialLabel" input-align="right"
+						:placeholder="materialPlaceholder" @keyup.enter.native="onEnter(2)" ref="filed2" required
+						:error-message="errorMsg2" error-message-align="right" />
+				</div>
+			</div>
+			<van-cell-group :title="contentTitle">
+				<van-collapse v-model="activeNames">
+					<van-collapse-item v-for="(item,index) in contentInfo" :title="(index+1)+'、工卡：'+item" :name="index">
+						<template #title>
+							<van-row>
+								<van-col span="16">{{(index+1)}}、工卡：{{item}}</van-col>
+								<van-col span="8" style="text-align: right;">
+									<van-button @click.stop="deletItem(index)" size="small"
+										type="danger">删除</van-button>
+								</van-col>
+							</van-row>
+						</template>
+
+					</van-collapse-item>
+				</van-collapse>
+			</van-cell-group>
+
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup"
+					value-key="storeName" />
+			</van-popup>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					type: '', //物料类型
+					warehousetype: '', //仓库类型：1成品仓库  2线边仓仓库
+					showScan: false,
+					btnName: '确认',
+					title: '晶圆上架',
+					contentTitle: '',
+					warehousecode: '',
+					warehouseName: '请选择',
+					locationCode: '', //货架
+					materialContent: '', //条码内容
+					contentInfo: [],
+					errorMsg1: "",
+					errorMsg2: "",
+					columns: [],
+					showPicker: false,
+					activeNames: ["0"],
+
+					boxCode: ""
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+
+				},
+				created() {
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					this.type = type ? type : '2';
+					if (this.type == 1) {
+						this.contentTitle = "工卡内容"
+						this.title = '测试前烘烤批量开工'
+						this.materialLabel = '工卡号';
+						this.materialPlaceholder = '请输入或扫描工卡号';
+						$("#equipmentCode").hide()
+						$("#box").hide()
+					} else if (this.type == 2) {
+						this.contentTitle = "工卡内容"
+						this.title = '测试前烘烤批量报工'
+						this.materialLabel = '产品标签号';
+						this.materialPlaceholder = '请输入或扫描产品标签号';
+
+					}
+					if (this.warehousetype == 1) {
+						this.querystores()
+					}
+					if (this.warehousetype == 2) {
+						this.querylinestores()
+					}
+				},
+				methods: {
+				
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+						if (self.contentInfo.length == 0) {
+							self.$toast('请先扫描工卡');
+							self.$refs.filed2.focus();
+							return
+						}
+						var param = {
+							modifyUser: localStorage.userCode,
+							modifyUserName: localStorage.userName,
+							items: self.contentInfo,
+							type: this.type,
+							equipmentCode: self.locationCode,
+							boxCode: self.boxCode
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/testBeforeBake',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											self.warehousecode = '';
+											self.warehouseName = '';
+											self.locationCode = '';
+											self.materialContent = '';
+											self.errorMsg1 = '';
+											self.contentInfo = [];
+											self.$refs.filed2.focus();
+										})
+									} else {
+										self.$toast(res.msg);
+										self.$refs.filed2.focus();
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+							self.warehousecode = '';
+							self.warehouseName = '';
+							self.locationCode = '';
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+							self.materialContent = '';
+							self.contentInfo = [];
+							self.$refs.filed1.focus();
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: // 设备输入框
+								self.onFocus(type);
+								// 使用 $nextTick 保证 DOM 更新后再聚焦到盒号输入框
+								self.$nextTick(function() {
+									self.$refs.filed3.focus(); // filed3 是 boxCode 的 ref
+								});
+								break;
+							case 1: // 盒号输入框
+								if (this.boxCode) {
+									self.onFocus(type);
+								}
+								break;
+							case 2: // 工卡号输入框
+								this.getCardInfo();
+								break;
+						}
+					},
+
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent, this.boxCode);
+						var self = this;
+
+						// 如果盒号为空，则显示提示并停止执行
+						if (self.type == 2 && self.boxCode == "") {
+							self.$toast("请先输入盒号！");
+							return; // 立即返回，不执行以下代码
+						}
+
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCarddetail',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								type: this.type,
+								boxCode: this.boxCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+
+									self.errorMsg1 = ''
+									var isExist = false;
+									for (var index = 0; index < self.contentInfo.length; index++) {
+										var element = self.contentInfo[index];
+
+										if (element == res.data) {
+											isExist = true;
+											break;
+										}
+									}
+									if (!isExist) {
+										self.contentInfo.push(res.data);
+									} else {
+										self.$toast('已扫描过相同卡号');
+									}
+									self.materialContent = '';
+									self.boxCode = "";
+									// 使用 $nextTick 确保 DOM 更新完成后再聚焦到 filed3
+									self.$nextTick(function() {
+										self.$refs.filed3.focus();
+									});
+								} else {
+									self.$toast(res.msg);
+									self.materialContent = '';
+									self.boxCode = "";
+									// 使用 $nextTick 确保 DOM 更新完成后再聚焦到 filed3
+									self.$nextTick(function() {
+										self.$refs.filed3.focus();
+									});
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.boxCode = "";
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.warehousecode = value.storeCode;
+						this.warehouseName = value.storeName;
+						//					this.warehouseType = value.storeType;
+						this.showPicker = false;
+					},
+					deletItem: function(index) {
+						this.contentInfo.splice(index, 1)
+					}
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+	</body>
+</html>

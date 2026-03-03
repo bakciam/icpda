@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC首检</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-cell value="1、工序检查频率：断电开机、更换辅料（载带，盖带）设备封带相关维修、设备停止生产4小时以上。
+2、载带厂家可填写供应商简写，比如J-捷本，H-昊林。颜色填写黑色或透明。
+" />
+			</div>
+			<div>
+				<van-field v-model="time" label="日期时间" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div id='no'>
+				<van-field v-model="locationCode" label="机台号" input-align="right" placeholder="请输入或扫描设备" ref="filed0"
+					autofocus required :error-message="errorMsg1" error-message-align="right"
+					@keyup.enter.native="onEnter(1)" />
+			</div>
+			<div>
+				<van-field v-model="materialContent" label="工卡号" input-align="right" placeholder="请输入或扫描工卡号"
+					@keyup.enter.native="onEnter(2)" autofocus ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+
+			<div>
+				<van-field disabled v-model="pModel" label="产品型号" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div>
+				<van-field disabled v-model="package" label="封装类型" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div>
+				<van-field v-model="tapeManufacturers" label="载带厂家" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+
+			<div>
+				<van-field label="载带颜色（黑/透）" input-align="right">
+					<template #input>
+						<van-radio-group v-model="tapeColor" direction="horizontal">
+							<van-radio name="黑">黑</van-radio>
+							<van-radio name="透">透</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div>
+				<van-row id="size" class="flex-container">
+					<van-col span="4"
+						style="display: flex; justify-content: center; align-items: center; writing-mode: vertical-rl; text-orientation: upright;">
+						拉力测试值（g）
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field v-model="min" label="最小值" input-align="right" placeholder="输入..." ref="filed3"
+								:style="{ backgroundColor: isminOfRange(min)  }" />
+						</van-row>
+						<van-row>
+							<van-field v-model="max" label="最大值" input-align="right" placeholder="输入..."
+								:style="{ backgroundColor: ismaxOfRange(max)  }" />
+						</van-row>
+						<van-row>
+							<van-field v-model="range" label="极差值" input-align="right" placeholder="输入..."
+								:style="{ backgroundColor: israngeOfRange(range)  }" />
+						</van-row>
+						<van-row>
+							<van-field v-model="average" label="平均值" input-align="right" placeholder="输入..."
+								:style="{ backgroundColor: isaverageOfRange(average)  }" />
+						</van-row>
+
+					</van-col>
+				</van-row>
+			</div>
+
+
+			<div class='no'>
+				<van-field v-model="qc" label="QC" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">综合判定：</span>
+				<van-radio-group v-model="judgment" direction="horizontal">
+					<van-radio name="OK">OK</van-radio>
+					<van-radio name="NG">NG</van-radio>
+				</van-radio-group>
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">物料扣押：</span>
+				<van-checkbox-group v-model="wuliaokouya" direction="horizontal" :disabled="judgment !== 'NG'">
+					<van-checkbox name="NG">NG</van-checkbox>
+				</van-checkbox-group>
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">设备扣押：</span>
+				<van-checkbox-group v-model="shebeikouya" direction="horizontal" :disabled="judgment !== 'NG'">
+					<van-checkbox name="NG">NG</van-checkbox>
+				</van-checkbox-group>
+			</div>
+			<div class='no'>
+				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<van-tag type="success" size="large">{{tag}}</van-tag>
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					type: '', //物料类型
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					qc: '',
+					qcCode: '',
+
+					locationCode: '', //货架
+					materialContent: '', //条码内容
+					errorMsg1: "",
+					errorMsg2: "",
+					pModel: "",
+					time: "",
+					package: '',
+					remark: '',
+					shebeikouya: [],
+					wuliaokouya: [],
+					judgment: '',
+
+					tapeManufacturers: '',
+					tapeColor: "",
+					tag: "No:JDW-WI-Q-Q011-02(C)",
+					min: '',
+					max: '',
+					range: '',
+					average: '',
+					packageLimits: null
+
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.qc = localStorage.userName;
+
+				},
+				created() {
+
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+
+
+					this.title = 'IC测试站拉力记录表'
+
+					if (locationCode != null) {
+						this.materialContent = materialContent
+						this.locationCode = locationCode
+					}
+
+				},
+				methods: {
+					isminOfRange(value) {
+						const num = parseFloat(value); // 将输入的值转换为数字
+						if (isNaN(num) || this.packageLimits === null) {
+							return 'white'; // 如果输入的不是数字，返回白色
+						}
+						if (num < this.packageLimits.LowerLimit) {
+							return 'red'; // 低于 40，返回红色
+						} else if (num < this.packageLimits.LowerWarning) {
+							return 'yellow'; // 低于 45，返回黄色（警告色）
+						} else {
+							return 'white'; // 其他情况返回白色
+						}
+
+					},
+					ismaxOfRange(value) {
+						const num = parseFloat(value); // 将输入的值转换为数字
+						if (isNaN(num) || this.packageLimits === null) {
+							return 'white'; // 如果输入的不是数字，返回白色
+						}
+						if (num > this.packageLimits.UpperLimit) {
+							return 'red'; // 低于 40，返回红色
+						} else if (num > this.packageLimits.UpperWarning) {
+							return 'yellow'; // 低于 45，返回黄色（警告色）
+						} else {
+							return 'white'; // 其他情况返回白色
+						}
+
+					},
+					israngeOfRange(value) {
+
+						const num = parseFloat(value); // 将输入的值转换为数字
+						if (isNaN(num) || this.packageLimits === null) {
+							return 'white'; // 如果输入的不是数字，返回白色
+						}
+						if (num > this.packageLimits.RangeUpperLimit) {
+							return 'red'; // 低于 40，返回红色
+						} else if (num > this.packageLimits.RangeUpperWarning) {
+							return 'yellow'; // 低于 45，返回黄色（警告色）
+						} else {
+							return 'white'; // 其他情况返回白色
+						}
+					},
+					isaverageOfRange(value) {
+						const num = parseFloat(value); // 将输入的值转换为数字
+						if (isNaN(num) || this.packageLimits === null) {
+							return "white"; // 如果输入的不是数字，返回白色
+						}
+						if (num < this.packageLimits.AverageLowerLimit || num > this.packageLimits.AverageUpperLimit) {
+							return "red"; // 极差值在 45~75 之间，返回黄色
+						} else if (num < this.packageLimits.AverageLowerWarning || num > this.packageLimits
+							.AverageUpperWarning) {
+							return "yellow"; // 极差值在 40~90 之间，返回红色
+						} else {
+							return "white"; // 其他情况返回白色
+						}
+					},
+					//确认选择缺陷
+					confirmPopupreasons: function() {
+						var self = this;
+						if (this.selectedreasonsCode.length == 0) {
+							self.$toast('请先选择缺陷！');
+							return
+						}
+						var hasRepeat = false
+						for (var index = 0; index < self.selectedreasonsCode.length; index++) {
+							var element = self.selectedreasonsCode[index];
+							var bf1 = false;
+							for (var k = 0; k < self.reasons.length; k++) {
+								var item = self.reasons[k];
+								if (item == element) {
+									bf1 = true;
+									break;
+								}
+							}
+							if (bf1 == false) {
+								for (var j = 0; j < self.popupreasonsList.length; j++) {
+									var model1 = self.popupreasonsList[j];
+									if (model1 == element) {
+										self.reasons.push(model1);
+									}
+								}
+							} else {
+								hasRepeat = true;
+							}
+						}
+						if (hasRepeat) {
+							self.$toast('已为您筛选掉重复的缺陷！');
+						}
+						this.activeNames = ['4']
+						this.reasonspopup = false;
+					},
+					//显示缺陷选择弹窗
+					showreasonspopup: function() {
+						this.reasonspopup = true;
+						this.selectedreasonsCode = [];
+					},
+					onConfirmInspectionType(value) {
+						this.inspectionType = value;
+					},
+					onCancelInspectionType() {
+						this.inspectionType = '';
+					},
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+						var param = {
+
+							time: self.time,
+							cardID: self.materialContent,
+							equCode: self.locationCode,
+							package: self.package,
+							judgment: self.judgment,
+							qc: localStorage.userName,
+							qcCode: localStorage.userCode,
+							remark: self.remark,
+							wuliaokouya: this.wuliaokouya.includes("NG") ? "NG" : "",
+							shebeikouya: this.shebeikouya.includes("NG") ? "NG" : "",
+							average: self.average,
+							range: self.range,
+							max: self.max,
+							min: self.min,
+							tag: self.tag,
+							tapeColor: self.tapeColor,
+							tapeManufacturers: self.tapeManufacturers
+
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/FirstInspection4',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+
+
+										})
+									} else {
+										self.$toast(res.msg);
+
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+
+							// 重置所有属性
+							self.locationCode = '';
+							self.materialContent = '';
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+							self.pModel = '';
+							self.getNowTime();
+
+							self.remark = '';
+							self.shebeikouya = [];
+							self.wuliaokouya = [];
+							self.judgment = '';
+
+
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: {
+								self.onFocus(type);
+							}
+							case 1: //工卡			
+								self.onFocus(type);
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+							case 4: //缺陷
+
+								var isExist = false;
+								for (var index = 0; index < self.reasons.length; index++) {
+									var element = self.reasons[index];
+									if (self.txtReason == element) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.reasons.push(self.txtReason)
+								} else {
+									self.$toast('已扫描过相同缺陷');
+								}
+								self.txtReason = ''
+
+								break;
+						}
+					},
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								equipmentCode: self.locationCode,
+								type: 24,
+								kind: 1
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg1 = ''
+									self.$refs.filed2.focus();
+									// self.locationCode = res.data.EquipmentCode;
+									self.pModel = res.data.cardInfo.PModel;
+									self.materialContent = res.data.cardInfo.CardID;
+									self.package = res.data.cardInfo.PackageCode;
+									self.packageLimits = res.data.packageLimits;
+									console.log(self.package);
+									console.log(self.packageLimits);
+								} else {
+									self.$toast(res.msg);
+
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+						self.reasons.splice(index, 1)
+					},
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>温湿度点检</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-cell title="产品区域" is-link arrow-direction="down" required :value="locationname?locationname:'请选择'" @click="showPicker = true" />
+			</div> 
+			<div>
+				<van-field v-model="TH_Code" label="温湿度仪器编号" input-align="right" required/>
+			</div>
+			<div>
+				<van-field v-model="Check_Date" label="校准有效期" input-align="right" required/>
+			</div>
+			<div>
+				<van-cell title="班别">
+					<van-radio-group v-model="banbie" direction="horizontal">
+						<van-radio name="A">白班</van-radio>
+						<van-radio name="B">夜班</van-radio>
+					</van-radio-group>
+				</van-cell>
+			</div>
+			<div>
+				<van-field v-model="Temperature" label="温度" input-align="right" required/>
+			</div>
+			<div>
+				<van-field v-model="Humidity" label="湿度" input-align="right" required/>
+			</div>
+			<div>
+				<van-field v-model="Create_User" label="记录人" input-align="right" placeholder="请输入工号"
+					@keyup.enter.native="onEnter(1)"/>
+			</div>
+			<div>
+				<van-cell title="记录人" v-model="Create_UserName" />
+			</div>
+			<div>
+				<van-field v-model="Modify_User" label="确认人" input-align="right" placeholder="请输入工号"
+					@keyup.enter.native="onEnter(2)"/>
+			</div>
+			<div>
+				<van-cell title="确认人" v-model="Modify_UserName" />
+			</div>
+			<div>
+				<van-field v-model="Remark" label="报警记录" input-align="right"/>
+			</div>
+			<div>
+				<van-field v-model="Check_User" label="处理人" input-align="right" placeholder="请输入工号"
+					@keyup.enter.native="onEnter(3)"/>
+			</div>
+			<div>
+				<van-cell title="处理人" v-model="Check_UserName" />
+			</div>
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">确认</van-button>
+				</van-col>
+			</van-row>
+		</div>
+		<div>
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" value-key="locationname" @cancel="showPicker = false" @confirm="onConfirmPopup" />
+			</van-popup>
+		</div>
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showPicker:false,
+				title: '温湿度点检',
+				TH_Code: '',//工卡
+				Check_Date: '',//标签
+				Temperature: "",
+				Humidity: "",
+				Create_User: "",
+				Create_UserName: "",
+				Modify_User: "",
+				Modify_UserName: "",
+				Check_User: "",
+				Check_UserName: "",
+				Remark: "",
+				columns:[],
+				locationcode:'',
+				locationname:'',
+				banbie: ''
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+				this.getDetail();
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//出入库提交
+				save: function () {
+					var self = this;
+					if (self.TH_Code == undefined || self.TH_Code == '') {
+						self.$toast('请先输入温湿度仪器编号');
+						return;
+					}
+					if (self.Check_Date == undefined || self.Check_Date == '') {
+						self.$toast('请先输入校准有效期');
+						return;
+					}
+					if (self.banbie == undefined || self.banbie == '') {
+						self.$toast('请先选择班别');
+						return;
+					}
+					if (self.locationcode == undefined || self.locationcode == '') {
+						self.$toast('请先选择产品区域');
+						return;
+					}
+					if (self.Temperature == undefined || self.Temperature == '') {
+						self.$toast('请先输入温度');
+						return;
+					}
+					if (self.Humidity == undefined || self.Humidity == '') {
+						self.$toast('请先输入湿度');
+						return;
+					}
+					if (self.Create_User == undefined || self.Create_User == '') {
+						self.$toast('请先扫描记录人');
+						return;
+					}
+					if (self.Modify_User == undefined || self.Modify_User == '') {
+						self.$toast('请先扫描确认人');
+						return;
+					}
+					var param = {
+						TH_Code: self.TH_Code,
+						Check_Date: self.Check_Date,
+						Temperature: self.Temperature,
+						Humidity: self.Humidity,
+						Create_User: self.Create_User,
+						Create_UserName: self.Create_UserName,
+						Modify_User: self.Modify_User,
+						Modify_UserName: self.Modify_UserName,
+						Check_User: self.Check_User,
+						Check_UserName: self.Check_UserName,
+						Remark: self.Remark,
+						Product_Region: self.locationcode,
+						Banbie: self.banbie
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then(function () {
+						$.ajax({
+							url: serviceUrl + '/api/pda/tHInspectionSubmit',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.TH_Code = '';
+										self.Check_Date = '';
+										self.Temperature = '';
+										self.Humidity = '';
+										self.Create_User = '';
+										self.Create_UserName = '';
+										self.Modify_User = '';
+										self.Modify_UserName = '';
+										self.Check_User = '';
+										self.Check_UserName = '';
+										self.Remark = '';
+										self.locationcode = '';
+										self.locationname = '';
+										self.banbie = '';
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.TH_Code = '';
+						self.Check_Date = '';
+						self.Temperature = '';
+						self.Humidity = '';
+						self.Create_User = '';
+						self.Create_UserName = '';
+						self.Modify_User = '';
+						self.Modify_UserName = '';
+						self.Check_User = '';
+						self.Check_UserName = '';
+						self.Remark = '';
+						self.locationcode = '';
+						self.locationname = '';
+						self.banbie = '';
+					}).catch(function () {
+						// on cancel
+					});
+				},
+				//获取工序
+				getDetail: function () {
+					var self = this
+					$.ajax({
+						url: serviceUrl + '/api/pda/queryStationList',
+						type: 'GET',
+						data: '',
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.columns = res.data?res.data:[]
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误！');
+						}
+					})
+				},
+				//确认选择类型
+				onConfirmPopup: function (value, index) {
+					
+					this.locationname = value.locationname;
+					this.locationcode = value.locationcode;
+					this.showPicker = false;
+				},
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //工卡			
+							$.ajax({
+								url: serviceUrl + '/api/pda/getUser',
+								type: 'GET',
+								data: {
+									userID: self.Create_User
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									self.Create_UserName = res.data.userName;
+								},
+								error: function () {
+								}
+							});
+							break;
+						case 2: 
+							$.ajax({
+								url: serviceUrl + '/api/pda/getUser',
+								type: 'GET',
+								data: {
+									userID: self.Modify_User
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									self.Modify_UserName = res.data.userName;
+								},
+								error: function () {
+								}
+							});
+							break;
+						case 3: 	
+							$.ajax({
+								url: serviceUrl + '/api/pda/getUser',
+								type: 'GET',
+								data: {
+									userID: self.Check_User
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									self.Check_UserName = res.data.userName;
+								},
+								error: function () {
+								}
+							});
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

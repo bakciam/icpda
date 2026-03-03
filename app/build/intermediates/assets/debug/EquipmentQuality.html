@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>设备维修质检</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-cell title="机台编码" v-model="equipmentInfo.equipmentcode" />
+			</div>
+			<div>
+				<van-cell title="报修日期" v-model="equipmentInfo.generationTime" />
+			</div>
+			<div>
+				<van-cell title="机台状态" v-model="equipmentInfo.status" />
+			</div>
+			<div>
+				<van-cell title="停机类型" v-model="equipmentInfo.downtypename" />
+			</div>
+			<div>
+				<van-cell title="处理方式" v-model="equipmentInfo.downreasonname" />
+			</div>
+			<div>
+				<van-cell title="修理人" v-model="equipmentInfo.modifyUserName" />
+			</div>
+			<div>
+				<van-cell title="开始时间" v-model="equipmentInfo.dXTime" />
+			</div>
+			<div>
+				<van-cell title="完成时间" v-model="equipmentInfo.fJTime" />
+			</div>
+		</div>
+		
+		<div class="btm_btn">
+			<van-button type="info" block square @click="save">{{btnName}}</van-button>
+		</div>
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				value: '',
+				title: '设备维修质检',//标题
+				equipmentCode: '',//设备编码
+				equipmentInfo: {},
+				btnName: '确认'//按钮名称
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+				this.equipmentCode = getQueryVariable('equipmentCode');//仓库编码
+				this.getDetail();
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.value = codedata.Barcode;
+				},
+				//提交
+				save: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否' + self.btnName + '?',
+					}).then(function () {
+						// on confirm
+						$.ajax({
+							url: serviceUrl + '/api/pda/qualitySubmit',
+							type: 'POST',
+							data: {
+								equipmentCode: self.equipmentInfo.equipmentCode,
+								modifyUser: localStorage.userCode,
+								modifyUserName: localStorage.userName
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.backLast();
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+				
+				//获取明细
+				getDetail: function () {
+					var self = this
+					$.ajax({
+						url: serviceUrl + '/api/pda/queryQuality',
+						type: 'GET',
+						data: {
+							equipmentCode: self.equipmentCode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.equipmentInfo = res.data;
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

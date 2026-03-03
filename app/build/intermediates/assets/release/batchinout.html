@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC成型站批量开工报工</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-collapse v-model="activeNames">
+					<van-collapse-item name="6" title="卡号，盒号">
+
+						<div>
+							<van-field v-model="subCardCode" label="工卡号" input-align="right" placeholder="请输入或扫描物料条形码"
+								ref="filed6" @keyup.enter.native="onEnter(1)" clearable />
+						</div>
+						<div>
+							<van-field disabled v-model="package" label="封装型号" input-align="right" placeholder="请输入"
+								required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+
+						<div>
+							<van-field disabled v-model="pModel" label="产品型号" input-align="right" placeholder="请输入"
+								required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+
+						<div>
+							<van-field disabled v-model="curNum" label="工卡数量" input-align="right" placeholder="请输入"
+								required :error-message="errorMsg1" error-message-align="right" />
+						</div>
+						<div>
+							<van-field v-model="subBoxCode" label="对应盒号" input-align="right" placeholder="请输入或扫描物料条形码"
+								@keyup.enter.native="onEnter(6)" ref="filed7" clearable />
+						</div>
+						<div class="confirm_dellist">
+							<div class="list_has_del" v-for="(item,index) in subCardCodes">
+								<span>{{index+1}}、：{{item.subCardCode}}-{{item.subBoxCode}}</span>
+								<div class="list_has_del_r">
+									<span class="del_btn" @click="onDelete(1,index)">删除</span>
+								</div>
+							</div>
+						</div>
+					</van-collapse-item>
+
+
+				</van-collapse>
+
+
+			</div>
+			<div>
+				<van-field disabled v-model="curStepCode" label="所在工步" input-align="right" placeholder="请输入" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="txtEquipment" label="设备代码" input-align="right" placeholder="输入/扫描/选择设备代码"
+					@keyup.enter.native="onEnter(2)" ref="filed2" clearable>
+					<van-button slot="button" size="small" type="info" @click.stop="showequipmentspopup">选择
+					</van-button>
+				</van-field>
+			</div>
+			<div class="confirm_dellist">
+				<div class="list_has_del" v-for="(item,index) in equipments">
+					<span>{{index+1}}、设备编码：{{item.equipmentCode}}</span>
+					<div class="list_has_del_r">
+						<span class="del_btn" @click="onDelete(2,index)">删除</span>
+					</div>
+				</div>
+			</div>
+			<div class='no'>
+				<van-field v-model="inTime" label="进烘箱时间" input-align="right" placeholder="请输入" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div class='no'>
+				<van-field v-model="inQty" label="进烘箱数量" input-align="right" placeholder="请输入" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+
+			<div class='no' v-if="type==2">
+				<van-field v-model="outTime" label="出烘箱时间" input-align="right" placeholder="请输入" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div class='no' v-if="type==2">
+				<van-field v-model="outQty" label="出烘箱数量" input-align="right" placeholder="请输入" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="qc" label="进烘箱人员" input-align="right" placeholder="请输入" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div class='no'>
+				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+
+
+
+			<div class="btm_btn">
+				<!-- <van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col >
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row> -->
+				<van-button type="info" block square @click="save">{{btnName}}</van-button>
+			</div>
+			<!--设备选择相关弹层-->
+			<van-popup v-model="equipmentspopup" position="right" :style="{ width: '80%',height:'100%' }">
+				<div class="popup_list">
+					<div class="popub_title">设备列表</div>
+					<div class="pop_list">
+						<van-checkbox-group v-model="selectedequipmentsCode">
+							<van-checkbox v-for="(item,index) in popupequipmentsList" :name="item.equipmentCode">
+								<div class="row_line">{{item.equipmentName}}<span
+										class="fontright">{{item.equipmentModel}}</span></div>
+							</van-checkbox>
+						</van-checkbox-group>
+					</div>
+				</div>
+				<van-row class="popup_fixed_btn">
+					<van-col span="10">
+						<van-button color="#ccc" square block @click="equipmentspopup=false">取消</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" square block @click="confirmPopupequipments">确认选择</van-button>
+					</van-col>
+				</van-row>
+			</van-popup>
+			<div>
+				<van-dialog title="设备选择" v-model="dialogequipmentsScan" show-cancel-button
+					@confirm="onConfirmequipments">
+					<div class="redtips">请扫描要选择的设备</div>
+					<div class="confirm_dellist">
+						<div class="list_has_del" v-for="(item,index) in dialogequipmentsList">
+							<span>{{index+1}}、设备名称：{{item.equipmentName}}</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="delDialogequipments(index)">删除</span>
+							</div>
+						</div>
+					</div>
+				</van-dialog>
+			</div>
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					type: '', //物料类型
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					errorMsg1: "",
+					errorMsg2: "",
+
+					qc: '',
+					qcCode: '',
+					materialContent: '', //条码内容
+					pModel: "",
+					time: "",
+					remark: '',
+					judgment: '',
+					tag: "",
+					package: '',
+					subCardCodes: [],
+					subCardCode: '',
+					subBoxCode: '',
+					txtEquipment: '', //输入的设备
+					equipments: [], //设备列表
+					activeNames: ['6'],
+					dialogequipmentsScan: false,
+					dialogequipmentsList: [],
+					equipmentspopup: false,
+					popupequipmentsList: [], //多选设备列表
+					firstCardId: '',
+					selectedequipmentsCode: [], //已选的设备集合
+					inTime: '',
+					inQty: Number(0),
+					outTime: '',
+					outQty: Number(0),
+					curNum: Number(0),
+					curStepCode: '',
+					type: 0,
+
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.qc = localStorage.userName;
+
+				},
+				created() {
+
+					var type = getQueryVariable('type');
+					this.type = type ? type : '1';
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+
+
+					if (this.type == 1) {
+						this.title = 'IC成型站批量开工'
+
+					} else if (this.type == 2) {
+						this.title = 'IC成型站批量报工'
+
+					}
+
+
+				},
+				methods: {
+
+					onConfirmequipments: function() { //确认设备
+						this.equipments = this.equipments.concat(this.dialogequipmentsList);
+						this.activeNames = ['2']
+						this.dialogequipmentsScan = false;
+					},
+					//显示设备选择弹窗
+					showequipmentspopup: function() {
+						this.equipmentspopup = true;
+						this.selectedequipmentsCode = [];
+						this.getequipments();
+					},
+					//获取设备列表
+					getequipments: function() {
+
+						var self = this;
+						console.log(self.firstCardId);
+						$.ajax({
+							url: serviceUrl + '/api/pda/equipments',
+							type: 'GET',
+							data: {
+								cardID: self.firstCardId,
+								equipmentName: self.equipmentName
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.popupequipmentsList = res.data;
+
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					//确认选择设备
+					confirmPopupequipments: function() {
+						var self = this;
+						if (this.selectedequipmentsCode.length == 0) {
+							self.$toast('请先选择设备！');
+							return
+						}
+						var hasRepeat = false;
+						for (var index = 0; index < self.selectedequipmentsCode.length; index++) {
+							var element = self.selectedequipmentsCode[index];
+							var bf1 = false;
+							for (var k = 0; k < self.equipments.length; k++) {
+								var item = self.equipments[k];
+								if (item.equipmentCode == element) {
+									bf1 = true;
+									break;
+								}
+							}
+							if (bf1 == false) {
+								for (var j = 0; j < self.popupequipmentsList.length; j++) {
+									var model1 = self.popupequipmentsList[j];
+									if (model1.equipmentCode == element) {
+										self.equipments.push(model1);
+									}
+								}
+							} else {
+								hasRepeat = true;
+							}
+						}
+						if (hasRepeat) {
+							self.$toast('已为您筛选掉重复的设备！');
+						}
+						this.activeNames = ['2'];
+						this.equipmentspopup = false;
+					},
+
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+						if (this.type == 1) {
+
+							this.inTime = this.time
+						} else if (this.type == 2) {
+
+							this.outTime = this.time
+
+						}
+					},
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+
+						var param = {
+							type: self.type,
+							subCardCodes: self.subCardCodes,
+							EquCode: self.equipments,
+							InTime: self.inTime,
+							OutTime: self.outTime,
+							InQty: self.inQty,
+							OutQty: self.outQty,
+
+							InUserName: localStorage.userName,
+							InUserCode: localStorage.userCode,
+							Comment: self.remark,
+							curStepCode: self.curStepCode,
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							const toast = vant.Toast.loading({
+								duration: 0, // 持续展示 toast
+								forbidClick: true,
+								message: "加载中..."
+							});
+							$.ajax({
+								url: serviceUrl + '/api/pda/batchinout',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										console.log("成功-清除加载");
+										vant.Toast.clear();
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+
+											// 重置所有属性
+											self.materialContent = '';
+											self.errorMsg1 = '';
+											self.errorMsg2 = '';
+											self.pModel = '';
+											self.getNowTime();
+
+											self.remark = '';
+											self.shebeikouya = [];
+											self.wuliaokouya = [];
+											self.judgment = '';
+											self.package = '';
+
+											vant.Toast.clear(); // 清除加载
+										})
+									} else {
+										
+										self.$dialog({
+											title: '错误',
+											message: res.msg,
+										}).then(() => {
+											// on close
+										});
+										// self.$toast(res.msg);
+										vant.Toast.clear(); // 清除加载
+									}
+								},
+								error: function() {
+									self.$toast('网络异常'); -
+									// 请求发送失败
+									console.log("请求失败-清除加载");
+									vant.Toast.clear(); // 清除加载
+									vant.Toast.fail('网络不稳定');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+
+							// 重置所有属性
+							self.materialContent = '';
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+							self.pModel = '';
+							self.getNowTime();
+
+							self.remark = '';
+							self.shebeikouya = [];
+							self.wuliaokouya = [];
+							self.judgment = '';
+							self.package = '';
+							self.testData1 = ''
+							self.testData2 = ''
+							self.testData3 = ''
+
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: {
+								self.onFocus(type);
+							}
+							case 1: //工卡	
+								this.getCardInfo();
+								self.onFocus(type);
+								break;
+
+							case 2:
+								$.ajax({
+									url: serviceUrl + '/api/pda/getequipment',
+									type: 'GET',
+									data: {
+										equipmentCode: self.txtEquipment,
+										cardID: self.cardID
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function(res) {
+										if (res.code == 200) {
+											var isExist = false;
+											for (var index = 0; index < self.equipments
+												.length; index++) {
+												var element = self.equipments[index];
+												if (self.txtEquipment == element.equipmentCode) {
+													isExist = true;
+													break;
+												}
+											}
+											if (!isExist) {
+												var equipments = {};
+												equipments.equipmentCode = res.data.equipmentCode;
+												equipments.equipmentName = res.data.equipmentName;
+												equipments.equipmentModel = res.data.equipmentModel;
+												equipments.supplierName = res.data.supplierName;
+
+												self.equipments.push(equipments);
+											} else {
+												self.$toast('已扫描过相同设备');
+											}
+											if (res.data.partNumber != "") {
+												var batchNumber = res.data.batchNumber.split(',');
+												for (var i = 0; i < batchNumber.length; i++) {
+													var materials = {};
+													materials.partNumber = res.data.partNumber;
+													materials.partName = res.data.partName;
+													materials.pModel = res.data.pModel;
+													materials.batchNumber = batchNumber[i];
+													materials.Spec = res.data.Spec;
+													materials.qty = 0;
+													self.materials.push(materials);
+												}
+											}
+											self.txtEquipment = ''
+										} else {
+											// self.$dialog.confirm({
+											// 	title: '错误',
+											// 	message: res.msg,
+											// }).then(function() {
+											// 	self.package = '';
+											// 	self.pModel = '';
+
+											// }).catch(function() {
+											// 	// on cancel
+											// });
+											showDialog({
+												title: '错误',
+												message: res.msg,
+											}).then(() => {
+												// on close
+											});
+											// self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+
+							case 6: //成型来料
+								//判断当前成型来料是否存在
+								var isExist = false;
+								for (var index = 0; index < self.subCardCodes.length; index++) {
+									var element = self.subCardCodes[index];
+									if (element.subCardCode == self.subCardCode) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.subCardCodes.push({
+										subCardCode: self.subCardCode,
+										subBoxCode: self.subBoxCode,
+										curNum: self.curNum
+									})
+									console.log(self.subCardCodes);
+								} else {
+									self.$toast('已扫描过相同成型料号');
+								}
+								self.onFocus(0)
+								self.subCardCode = ''
+								self.subBoxCode = ''
+								break;
+						}
+					},
+
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						const toast = vant.Toast.loading({
+							duration: 0, // 持续展示 toast
+							forbidClick: true,
+							message: "加载中..."
+						});
+						$.ajax({
+
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.subCardCode,
+								equipmentCode: '',
+								type: 31,
+								kind: self.type
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log("成功-清除加载");
+									vant.Toast.clear();
+									if (self.type == 2) {
+										console.log(res.data);
+										self.inTime = res.data.batchInOuts[0].InTime
+										self.inQty = res.data.batchInOuts[0].InQty
+										self.outQty = res.data.batchInOuts[0].OutQty
+										self.equipments = res.data.equipmentList
+										self.curStepCode = res.data.StepCode
+										// 遍历 batchInOuts，提取 CardID 和 BoxCode 并存入 subCardCodes
+										// 先清空数组
+										self.subCardCodes = [];
+										res.data.batchInOuts.forEach(item => {
+											self.subCardCodes.push({
+												subCardCode: item.CardID, // 假设字段是 CardID
+												subBoxCode: item.BoxCode // 假设字段是 BoxCode
+											});
+										});
+									} else {
+										console.log(res.data);
+										self.errorMsg1 = ''
+
+										self.curStepCode = res.data.CurrentStepCode
+										if (self.type != res.data.TrackIn) {
+											self.$dialog({
+												title: '错误',
+												message: "工卡不匹配当前操作",
+											}).then(() => {
+												// on close
+											});
+											// self.$toast("工卡不匹配当前操作");
+											return;
+										} else
+											self.type = res.data.TrackIn
+										self.pModel = res.data.PModel;
+										self.materialContent = res.data.CardID;
+										self.package = res.data.PackageName;
+										self.firstCardId = res.data.CardID;
+										self.curNum = res.data.CurrentQuantity
+
+										// 将 CurrentQuantity 转为数字（用 parseFloat 或 Number）
+										const quantity = parseFloat(res.data.CurrentQuantity) ||
+											0; // 处理字符串转数字
+										const result = parseFloat(self.inQty) + quantity; // 数学加法
+										self.inQty = parseFloat(result.toFixed(3)); // 保留3位小数，并转回数字类型
+
+									}
+
+								} else {
+									// self.$dialog.confirm({
+									// 	title: '提示',
+									// 	message: '这个工卡不存在，请确认',
+									// }).then(function() {
+									// 	self.package = '';
+									// 	self.pModel = '';
+
+									// }).catch(function() {
+									// 	// on cancel
+									// });
+									self.$dialog({
+										title: '错误',
+										message: res.msg,
+									}).then(() => {
+										// on close
+									});
+									// self.$toast(res.msg);
+									// 请求发送失败
+									console.log("请求失败-清除加载");
+									vant.Toast.clear(); // 清除加载
+									// vant.Toast.fail('网络不稳定');
+									self.$refs.filed6.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed6.focus();
+						} else if (type == 1) {
+							self.$refs.filed7.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+						switch (type) {
+							case 1: //盒号
+								self.subCardCodes.splice(index, 1)
+								break;
+							case 2:
+								self.equipments.splice(index, 1)
+								break;
+						}
+
+					},
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+</html>

@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>主界面</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<div>
+				<van-nav-bar title="智能刷卡" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-field v-model="cardID" label="工卡" input-align="right" placeholder="自动带出" readonly />
+			</div>
+			<div class="collspan_list">
+				<van-collapse v-model="activeNames">
+					<van-collapse-item title="基本信息" name="1" v-if="powerList[0]==1">
+						<div>
+							<van-cell title="当前工步" v-model="basicForm.curStep" />
+						</div>
+						<div>
+							<van-cell title="当前工序" v-model="basicForm.stationName" />
+						</div>
+						<div>
+							<van-cell title="当前数量" v-model="basicForm.curNum" />
+						</div>
+						<div>
+							<van-cell title="客户代码" v-model="basicForm.customerCode" />
+						</div>
+						<div>
+							<van-cell title="产品型号" title-style="flex: .4;" v-model="basicForm.pModel" />
+						</div>
+						<div>
+							<van-cell title="芯片型号" title-style="flex: .4;" v-model="basicForm.dieModel" />
+						</div>
+						<div>
+							<van-cell title="芯片批次" v-model="basicForm.dieBatch" />
+						</div>
+						<div v-if="!basicForm.showPullInBtn">
+							<van-cell title="工单" v-model="basicForm.workOrder" />
+						</div>
+						<div>
+							<van-cell title="封装形式" v-model="basicForm.packageCode" />
+						</div>
+						<div v-if="!basicForm.showPullInBtn && !basicForm.showCompleteBtn">
+							<van-cell title="下道工步" v-model="basicForm.nextStep" />
+						</div>
+						<div>
+							<van-cell title="当前状态" v-model="basicForm.statusText" />
+						</div>
+						<div v-if="basicForm.FTFlag">
+							<van-field v-model="basicForm.FTyield" label="初测良率" type="number" input-align="right"
+								placeholder="请输入" />
+						</div>
+						<div v-if="!basicForm.showPullInBtn && !basicForm.showCompleteBtn">
+							<div v-if="basicForm.frameFlag">
+								<van-field v-model="basicForm.frameQuantity" label="框架条数" type="number"
+									input-align="right" placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.weightFlag">
+								<van-field v-model="basicForm.weight" label="重量" input-align="right"
+									placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.mtbaFlag">
+								<van-field v-model="basicForm.productTime" label="生产时间" type="text" input-align="right"
+									placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.mtbaFlag">
+								<van-field v-model="basicForm.waitingTime" label="待机时间" type="text" input-align="right"
+									placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.mtbaFlag">
+								<van-field v-model="basicForm.mtba" label="MTBA" type="text" input-align="right"
+									placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.mtbaFlag">
+								<van-field v-model="basicForm.uph" label="UPH" type="digit" input-align="right"
+									placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.mtbaFlag">
+								<van-field v-model="basicForm.ntoUph" label="净UPH" type="digit" input-align="right"
+									placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.mtbaFlag">
+								<van-field v-model="basicForm.auxiliaryTimes" label="辅助次数" type="digit"
+									input-align="right" placeholder="请输入" />
+							</div>
+							<div v-if="basicForm.boxFlag">
+								<van-field v-model="txtBoxCode" label="盒号" input-align="right" placeholder="请输入或扫描盒号"
+									@keyup.enter.native="onEnter(1)" autofocus ref="filed1" clearable />
+							</div>
+							<div class="confirm_dellist" v-if="basicForm.boxFlag">
+								<div class="list_has_del" v-for="(item,index) in boxCodes">
+									<span>{{index+1}}、盒号：{{item}}</span>
+									<div class="list_has_del_r">
+										<span class="del_btn" @click="onDelete(1,index)">删除</span>
+									</div>
+								</div>
+							</div>
+
+							<div v-if="basicForm.bufferBoxFlag">
+								<van-field v-model="txtBufferBoxCode" label="弹夹盒号" input-align="right"
+									placeholder="请输入或扫描弹夹盒号" @keyup.enter.native="onEnter(5)" autofocus ref="filed1"
+									clearable />
+							</div>
+							<div class="confirm_dellist" v-if="basicForm.bufferBoxFlag">
+								<div class="list_has_del" v-for="(item,index) in bufferBoxCodes">
+									<span>{{index+1}}、弹夹盒号：{{item}}</span>
+									<div class="list_has_del_r">
+										<span class="del_btn" @click="onDelete(5,index)">删除</span>
+									</div>
+								</div>
+							</div>
+
+						</div>
+						<div v-if="basicForm.showTestOutboundBtn">
+							<div>
+								<van-cell title="测试规范" v-model="basicForm.programe" />
+							</div>
+							<div>
+								<van-field v-model="basicForm.programeName" label="测试规范名称" input-align="right"
+									placeholder="请输入" />
+							</div>
+						</div>
+					</van-collapse-item>
+					<van-collapse-item name="2" v-if="powerList[1]==1" title="设备选择">
+						<!-- <div slot="title">设备选择
+						<div class="buton_list">
+							<van-button type="info" @click.stop="showequipmentsScan">扫描</van-button>
+							<van-button type="info" @click.stop="showequipmentspopup">选择</van-button>
+						</div>
+					</div> -->
+						<div>
+							<van-field v-model="txtEquipment" label="设备代码" input-align="right"
+								placeholder="输入/扫描/选择设备代码" @keyup.enter.native="onEnter(2)" ref="filed2" clearable>
+								<van-button slot="button" size="small" type="info" @click.stop="showequipmentspopup">选择
+								</van-button>
+							</van-field>
+						</div>
+						<div class="confirm_dellist">
+							<div class="list_has_del" v-for="(item,index) in equipments">
+								<span>{{index+1}}、设备编码：{{item.equipmentCode}}</span>
+								<div class="list_has_del_r">
+									<span class="del_btn" @click="onDelete(2,index)">删除</span>
+								</div>
+							</div>
+						</div>
+						
+					</van-collapse-item>
+					<van-collapse-item name="3" title="物料信息" v-if="powerList[2]==1">
+						<!-- <div slot="title">物料信息
+						<div class="buton_list">
+							<van-button type="info" @click.stop="showematerialScan">扫描</van-button>
+						</div>
+					</div> -->
+						<div>
+							<van-field v-model="txtMaterial" label="物料二维码" input-align="right" placeholder="请输入或扫描物料二维码"
+								@keyup.enter.native="onEnter(3)" ref="filed3" clearable>
+								<!-- <van-button slot="button" size="small" type="info" @click.stop="showeboxCodeScan">扫描</van-button>
+						</van-field> -->
+						</div>
+						<div class="confirm_dellist">
+							<div class="list_has_del" v-for="(item,index) in materials">
+								<span>{{index+1}}、批号：{{item.batchNumber}}</span>
+								<div class="list_has_del_r">
+									<span class="del_btn" @click="onDelete(3,index)">删除</span>
+								</div>
+								<div>型号：{{item.pModel}}</div>
+								<div>
+									<van-field required v-model="item.qty" label="数量" type="number" input-align="right"
+										placeholder="请输入" />
+								</div>
+							</div>
+						</div>
+					</van-collapse-item>
+
+					<van-collapse-item name="6" title="成型来料" v-if="powerList[2]==1&&subCardFlag=='1'">
+						<!-- <van-collapse-item name="6" title="成型来料"> -->
+						<div>
+							<van-field v-model="carryBoxCode" label="容器号二维码" input-align="right" placeholder="请输入或扫描条形码"
+								clearable />
+						</div>
+						<div >
+							<van-field v-model="lastCardID" label="上批次二维码" input-align="right" placeholder="请输入或扫描批次二维码"
+								@keyup.enter.native="onEnter(8)" clearable>
+						</div>
+						<div>
+							<van-field v-model="equCode" label="机台二维码" input-align="right" placeholder="请输入或扫描物料条形码"
+								clearable />
+						</div>
+						<div>
+							<van-field v-model="subCardCode" label="成型条形码" input-align="right" placeholder="请输入或扫描物料条形码"
+								ref="filed6" @keyup.enter.native="onFocus(0)" clearable />
+						</div>
+						<div>
+							<van-field v-model="subBoxCode" label="对应盒号" input-align="right" placeholder="请输入或扫描物料条形码"
+								@keyup.enter.native="onEnter(6)" ref="filed7" clearable />
+						</div>
+						<div class="confirm_dellist">
+							<div class="list_has_del" v-for="(item,index) in subCardCodes">
+								<span>{{index+1}}、：{{item.subCardCode}}-{{item.subBoxCode}}</span>
+								<div class="list_has_del_r">
+									<span class="del_btn" @click="onDelete(6,index)">删除</span>
+								</div>
+							</div>
+						</div>
+					</van-collapse-item>
+
+
+					<van-collapse-item v-if="false" name="7" title="额外记录">
+						<div v-if=false>
+							<div>
+								<van-row id="size" class="flex-container">
+									<van-col span="4"
+										style="display: flex; justify-content: center; align-items: center; writing-mode: vertical-rl; text-orientation: upright;">
+										自检记录
+									</van-col>
+									<van-col span="19" class="flex-field-col">
+										<van-row>
+											<van-field v-model="NumberSamples" label="次数" input-align="right"
+												placeholder="输入..." />
+										</van-row>
+										<van-row>
+											<van-field v-model="NumberDefects" input-align="right" label="不良数/一刀数量"
+												placeholder="输入..." />
+										</van-row>
+
+									</van-col>
+								</van-row>
+							</div>
+							<div class='no'>
+								<van-field v-model="molding" label="清模" input-align="right" placeholder="请输入"
+									error-message-align="right" />
+							</div>
+						</div>
+						<div>
+							<div>
+								<van-field label="每模每条自检" input-align="right">
+									<template #input>
+										<van-radio-group v-model="selfTest" direction="horizontal">
+											<van-radio name="OK">OK</van-radio>
+											<van-radio name="NG">NG</van-radio>
+										</van-radio-group>
+									</template>
+								</van-field>
+							</div>
+
+							<div class='no'>
+								<van-field v-model="molding" label="黑胶型号/批次/箱号" input-align="right" placeholder="请输入"
+									autofocus ref="filed1" error-message-align="right" />
+							</div>
+							<div class='no'>
+								<van-field v-model="vinylFormat" label="黑胶规格" input-align="right" placeholder="请输入"
+									autofocus ref="filed1" error-message-align="right" />
+							</div>
+							<div class='no'>
+								<van-field v-model="vinylTime" label="使用时间" input-align="right" placeholder="请输入"
+									autofocus ref="filed1" error-message-align="right" />
+							</div>
+							<div>
+								<van-field label="4H自检" input-align="right">
+									<template #input>
+										<van-radio-group v-model="selfTest4H" direction="horizontal">
+											<van-radio name="OK">OK</van-radio>
+											<van-radio name="NG">NG</van-radio>
+										</van-radio-group>
+									</template>
+								</van-field>
+							</div>
+							<div class='no'>
+								<van-field v-model="containerNumber" label="容器编号" input-align="right" placeholder="请输入"
+									autofocus ref="filed1" error-message-align="right" />
+							</div>
+							<div>
+								<van-field label="首批抽一模全检" input-align="right">
+									<template #input>
+										<van-radio-group v-model="allTest" direction="horizontal">
+											<van-radio name="OK">OK</van-radio>
+											<van-radio name="NG">NG</van-radio>
+										</van-radio-group>
+									</template>
+								</van-field>
+							</div>
+						</div>
+						<div class='no'>
+							<van-field v-model="remarks" label="备注" input-align="right" placeholder="请输入"
+								error-message-align="right" />
+						</div>
+					</van-collapse-item>
+
+					<van-collapse-item name="4" title="缺陷选择" v-if="powerList[3]==1">
+						<!-- <div slot="title">缺陷选择
+						<div class="buton_list">
+							<van-button type="info" @click.stop="showreasonsScan">扫描</van-button>
+							<van-button type="info" @click.stop="showreasonspopup">选择</van-button>
+						</div>
+					</div> -->
+						<div>
+							<van-field v-model="txtReason" label="缺陷代码" input-align="right" placeholder="输入/扫描/选择缺陷代码"
+								@keyup.enter.native="onEnter(4)" ref="filed4" clearable>
+								<van-button slot="button" size="small" type="info" @click.stop="showreasonspopup">选择
+								</van-button>
+							</van-field>
+						</div>
+						<div class="confirm_dellist">
+							<div class="list_has_del" v-for="(item,index) in reasons">
+								<span>{{index+1}}、缺陷名称：{{item.reasonName}}</span>
+								<div class="list_has_del_r">
+									<span class="del_btn" @click="onDelete(4,index)">删除</span>
+								</div>
+								<van-field required v-model="item.qty" label="缺陷数量" type="number" input-align="right"
+									placeholder="请输入" />
+							</div>
+						</div>
+					</van-collapse-item>
+					<van-collapse-item name="5" v-if="powerList[4]==1">
+						<div slot="title">测试分bin</div>
+						<div class="redtips">{{bintips}}</div>
+						<div class="normal_item" v-for="(item,index) in sortings">
+							<div>
+								<van-cell :title="index+1+'、'+item.binCode" v-model="value" />
+							</div>
+							<div>
+								<van-cell title="bin名称" v-model="item.binName" />
+							</div>
+							<div>
+								<van-cell title="是否良品" v-model="item.goodFlag" />
+							</div>
+							<div>
+								<van-cell title="bin类型" v-model="item.binTypeName" />
+							</div>
+							<van-field required v-model="item.qty" @input="changeBinQty" type="number" label="数量"
+								input-align="right" placeholder="请输入" />
+						</div>
+					</van-collapse-item>
+				</van-collapse>
+				<div class='no custom-van-field'
+					v-if="(basicForm.curStepCode == 104050 || basicForm.curStepCode == 116030) && cardoperationType === 3">
+					<span class="field-label">综合判定：</span>
+					<van-radio-group v-model="judgment" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div v-if="judgment=='NG'">
+					<van-field v-model="remark" label="扣押备注" input-align="right" placeholder="请填写扣押原因" />
+				</div>
+
+			</div>
+			<div class="btm_btn">
+				<van-button v-if="judgment=='NG'" type="danger" block square @click="detain">扣押</van-button>
+				<van-button v-else type="info" block square @click="cardoperation">{{btnName}}</van-button>
+			</div>
+			<!--设备选择相关弹层-->
+			<van-popup v-model="equipmentspopup" position="right" :style="{ width: '80%',height:'100%' }">
+				<div class="popup_list">
+					<div class="popub_title">设备列表</div>
+					<div class="pop_list">
+						<van-checkbox-group v-model="selectedequipmentsCode">
+							<van-checkbox v-for="(item,index) in popupequipmentsList" :name="item.equipmentCode">
+								<div class="row_line">{{item.equipmentName}}<span
+										class="fontright">{{item.equipmentModel}}</span></div>
+							</van-checkbox>
+						</van-checkbox-group>
+					</div>
+				</div>
+				<van-row class="popup_fixed_btn">
+					<van-col span="10">
+						<van-button color="#ccc" square block @click="equipmentspopup=false">取消</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" square block @click="confirmPopupequipments">确认选择</van-button>
+					</van-col>
+				</van-row>
+			</van-popup>
+			<div>
+				<van-dialog title="设备选择" v-model="dialogequipmentsScan" show-cancel-button
+					@confirm="onConfirmequipments">
+					<div class="redtips">请扫描要选择的设备</div>
+					<div class="confirm_dellist">
+						<div class="list_has_del" v-for="(item,index) in dialogequipmentsList">
+							<span>{{index+1}}、设备名称：{{item.equipmentName}}</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="delDialogequipments(index)">删除</span>
+							</div>
+						</div>
+					</div>
+				</van-dialog>
+			</div>
+			<div>
+				<van-dialog title="物料选择" v-model="dialogmaterialScan" show-cancel-button @confirm="onConfirmmaterial">
+					<div class="redtips">请扫描要选择的物料</div>
+					<!--<van-button type="info" block square @click="setmaterial('W*1009879*099*100')">扫描</van-button>-->
+					<div class="confirm_dellist">
+						<div class="list_has_del" v-for="(item,index) in dialogmaterialList">
+							<span>{{index+1}}、批号：{{item.batchNumber}}</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="delDialogmaterial(index)">删除</span>
+							</div>
+						</div>
+					</div>
+				</van-dialog>
+			</div>
+			<div>
+				<van-dialog title="盒号扫描" v-model="dialogboxCodeScan" show-cancel-button @confirm="onConfirmboxCode">
+					<div class="redtips">请扫描要选择的盒号</div>
+					<!--<van-button type="info" block square @click="setboxCode('11-22-33')">扫描</van-button>-->
+					<div class="confirm_dellist">
+						<div class="list_has_del" v-for="(item,index) in dialogboxCodeList">
+							<span>{{index+1}}、盒号：{{item}}</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="delDialogboxCode(index)">删除</span>
+							</div>
+						</div>
+					</div>
+				</van-dialog>
+			</div>
+			<!--缺陷选择相关弹层-->
+			<van-popup v-model="reasonspopup" position="right" :style="{ width: '80%',height:'100%' }">
+				<div class="popup_list">
+					<div class="popub_title">缺陷列表</div>
+					<div class="pop_list">
+						<van-checkbox-group v-model="selectedreasonsCode">
+							<van-checkbox v-for="(item,index) in popupreasonsList" :name="item.reasonCode">
+								<div class="row_line">{{item.reasonName}}</div>
+							</van-checkbox>
+						</van-checkbox-group>
+					</div>
+				</div>
+				<van-row class="popup_fixed_btn">
+					<van-col span="10">
+						<van-button color="#ccc" square block @click="reasonspopup=false">取消</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" square block @click="confirmPopupreasons">确认选择</van-button>
+					</van-col>
+				</van-row>
+			</van-popup>
+			<div>
+				<van-dialog title="缺陷选择" v-model="dialogreasonsScan" show-cancel-button :before-close="onBeforeClose"
+					@confirm="onConfirmreasons">
+					<div class="redtips">请扫描要选择的缺陷</div>
+					<div class="confirm_dellist">
+						<div class="list_has_del" v-for="(item,index) in dialogreasonsList">
+							<span>{{index+1}}、缺陷名称：{{item.reasonName}}</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="delDialogreasons(index)">删除</span>
+							</div>
+							<van-field required v-model="item.qty" label="缺陷数量" type="number" input-align="right"
+								placeholder="请输入" />
+
+						</div>
+					</div>
+				</van-dialog>
+			</div>
+
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					cardID: '',
+					value: '',
+					basicForm: {},
+					activeNames: ['1'],
+
+					dialogequipmentsScan: false,
+					dialogequipmentsList: [],
+					equipmentspopup: false,
+					popupequipmentsList: [], //多选设备列表
+					selectedequipmentsCode: [], //已选的设备集合
+
+					dialogreasonsScan: false,
+					dialogreasonsList: [],
+					reasonspopup: false,
+					popupreasonsList: [], //多选设备列表
+					selectedreasonsCode: [], //已选的设备集合
+					scanType: 0, //1-设备 2-缺陷 3-物料
+					sortings: [{}, {}],
+					bintips: '',
+					dialogmaterialScan: false,
+					dialogmaterialList: [],
+
+					dialogboxCodeScan: false,
+					dialogboxCodeList: [],
+					btnName: '',
+					cardoperationType: '',
+					powerList: [0, 0, 0, 0, 0], //界面权限
+
+					txtBoxCode: '', //输入的盒号
+					boxCodes: [], //盒号
+
+					txtBufferBoxCode: '', //输入的弹夹盒号
+					bufferBoxCodes: [], //弹夹盒号
+
+					txtMaterial: '', //输入的物料条码
+					materials: [], //物料列表
+
+					txtEquipment: '', //输入的设备
+					equipments: [], //设备列表
+
+					txtReason: '', //输入的缺陷代码
+					reasons: [], //缺陷列表
+					curStep: '',
+					subCardCodes: [],
+					subCardCode: '',
+					subBoxCode: '',
+					subCardFlag: '0',
+					subCards: [],
+					judgment: '',
+					remark: null,
+					testCount: -1,
+					equCode: '',
+					NumberDefects: '',
+					NumberSamples: '',
+					containerNumber: '',
+					molding: '',
+					remarks: '',
+					containerNumber: '',
+					molding: '',
+					selfTest: '',
+					vinylFormat: '',
+					vinylTime: '',
+					selfTest4H: '',
+					allTest: '',
+					lastCardID: '',
+					lastCardFlag:false,
+					carryBoxCode:'',
+					
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					window.scanCode = this.scanCode;
+				},
+				created: function() {
+					var cardID = getQueryVariable('cardID'); //L436005-05
+					this.cardID = cardID ? cardID : '';
+					this.getCardDetail()
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//扣押
+					detain: function() {
+						var self = this;
+						var saveData = {
+							cardID: self.cardID, //--工卡ID
+							userID: localStorage.userCode,
+							type: 6,
+							curNum: self.basicForm.curNum, //-- 当前数量
+							stationCode: self.basicForm.stationCode, //--工序编码
+							curStepCode: self.basicForm.curStepCode, //-- 工步编码
+							handler: localStorage.userCode,
+							handlerName: localStorage.userName,
+							remark: self.remark,
+							reasons: self.reasons
+
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认扣押?',
+						}).then(function() {
+							// on confirm
+							$.ajax({
+								url: serviceUrl + '/api/pda/cardoperation',
+								type: 'POST',
+								data: saveData,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+												title: '提示',
+												message: '操作成功!'
+											})
+											.then(function() {
+												self.backLast();
+											})
+
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function() {
+									self.$toast('服务器错误！');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+
+					},
+					arraysAreEqualIgnoreOrder: function(arr1, arr2) {
+						if (arr1.length !== arr2.length) {
+							return false;
+						}
+
+						const sortedArr1 = arr1.slice().sort();
+						const sortedArr2 = arr2.slice().sort();
+						console.log("sortedArr1", sortedArr1);
+						console.log("sortedArr2", sortedArr2);
+						for (let i = 0; i < sortedArr1.length; i++) {
+							if (sortedArr1[i] !== sortedArr2[i]) {
+								return false;
+							}
+						}
+
+						return true;
+					},
+					deepCompareArrays(arr1, arr2) {
+						if (arr1.length !== arr2.length) return false;
+
+						// 对数组进行排序
+						// const sortedArr1 = arr1.slice().sort();
+						// const sortedArr2 = arr2.slice().sort();
+
+						const sortedArr1 = this.sortArray(arr1);
+						const sortedArr2 = this.sortArray(arr2);
+
+						console.log(sortedArr1, sortedArr2);
+
+
+						// 逐个比较对象
+						for (let i = 0; i < sortedArr1.length; i++) {
+							if (!this.deepCompareObjects(sortedArr1[i], sortedArr2[i])) {
+								return false;
+							}
+						}
+
+
+						return true;
+					},
+					sortArray(arr) {
+						// 根据 subCardCode 排序
+						return arr.slice().sort((a, b) => {
+							if (a.subCardCode < b.subCardCode) return -1;
+							if (a.subCardCode > b.subCardCode) return 1;
+							return 0;
+						});
+					},
+					deepCompareObjects(obj1, obj2) {
+						const keys1 = Object.keys(obj1);
+						const keys2 = Object.keys(obj2);
+
+						if (keys1.length !== keys2.length) return false;
+
+						for (let key of keys1) {
+							if (obj1[key] !== obj2[key]) {
+								return false;
+							}
+						}
+
+						return true;
+					},
+					scanCode: function(data) { //监听扫码事件
+						var codedata = JSON.parse(data);
+						this.value = codedata.Barcode;
+						if (this.scanType == 1) {
+							this.setequipments(codedata.Barcode)
+						} else if (this.scanType == 2) {
+							this.setreasons(codedata.Barcode)
+						} else if (this.scanType == 3) {
+							this.setmaterial(codedata.Barcode)
+						} else if (this.scanType == 4) {
+							this.setboxCode(codedata.Barcode)
+						} else if (this.scanType == 5) {
+							this.setboxCode(codedata.Barcode)
+						}
+					},
+					//获取工卡明细
+					getCardDetail: function() {
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getcard',
+							type: 'GET',
+							data: {
+								cardID: self.cardID,
+								userID: localStorage.userCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.basicForm = res.data;
+									// if(res.data.boxCode){
+									// 	self.boxCodes = res.data.boxCode.split(",");
+									// }
+									self.btnName = res.data.btnName;
+									self.cardoperationType = res.data.type;
+									self.powerList = res.data.powerList ? res.data.powerList : [0, 0, 0,
+										0, 0
+									];
+									self.sortings = res.data.sortings ? res.data.sortings : [];
+									self.equipments = res.data.equipments ? res.data.equipments : [];
+									self.reasons = res.data.equipments ? res.data.reasons : [];
+									self.subCardFlag = res.data.subCardFlag;
+									self.subCards = res.data.subCards;
+									self.testCount = res.data.testCount;
+									console.log(res.data);
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					//回车事件
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 1: //盒号
+								//判断当前盒号是否存在
+								var isExist = false;
+								for (var index = 0; index < self.boxCodes.length; index++) {
+									var element = self.boxCodes[index];
+									if (element == self.txtBoxCode) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.boxCodes.push(self.txtBoxCode)
+								} else {
+									self.$toast('已扫描过相同盒号');
+								}
+								self.txtBoxCode = ''
+								break;
+							case 2:
+								$.ajax({
+									url: serviceUrl + '/api/pda/getequipment',
+									type: 'GET',
+									data: {
+										equipmentCode: self.txtEquipment,
+										cardID: self.cardID
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function(res) {
+										if (res.code == 200) {
+											var isExist = false;
+											for (var index = 0; index < self.equipments
+												.length; index++) {
+												var element = self.equipments[index];
+												if (self.txtEquipment == element.equipmentCode) {
+													isExist = true;
+													break;
+												}
+											}
+											if (!isExist) {
+												var equipments = {};
+												equipments.equipmentCode = res.data.equipmentCode;
+												equipments.equipmentName = res.data.equipmentName;
+												equipments.equipmentModel = res.data.equipmentModel;
+												equipments.supplierName = res.data.supplierName;
+
+												self.equipments.push(equipments);
+											} else {
+												self.$toast('已扫描过相同设备');
+											}
+											if (res.data.partNumber != "") {
+												var batchNumber = res.data.batchNumber.split(',');
+												for (var i = 0; i < batchNumber.length; i++) {
+													var materials = {};
+													materials.partNumber = res.data.partNumber;
+													materials.partName = res.data.partName;
+													materials.pModel = res.data.pModel;
+													materials.batchNumber = batchNumber[i];
+													materials.Spec = res.data.Spec;
+													materials.qty = 0;
+													self.materials.push(materials);
+												}
+											}
+											self.txtEquipment = ''
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 3: //物料
+								/* if (self.popupequipmentsList.length != 0 && this.equipments.length == 0) {
+									self.$toast('请先选择设备！');
+									return
+								} */
+								$.ajax({
+									url: serviceUrl + '/api/pda/getmaterial',
+									type: 'GET',
+									data: {
+										cardID: self.cardID,
+										materialContent: self.txtMaterial
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function(res) {
+										if (res.code == 200) {
+											var isExist = false;
+											for (var index = 0; index < self.materials.length; index++) {
+												var element = self.materials[index];
+												if (self.txtMaterial == element.materialCode) {
+													isExist = true;
+													break;
+												}
+											}
+											if (!isExist) {
+												self.materials.push(res.data)
+											} else {
+												self.$toast('已扫描过相同物料');
+											}
+											self.txtMaterial = ''
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 4: //缺陷
+								$.ajax({
+									url: serviceUrl + '/api/pda/getreason',
+									type: 'GET',
+									data: {
+										cardID: self.cardID,
+										reasonCode: self.txtReason
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function(res) {
+										if (res.code == 200) {
+											var isExist = false;
+											for (var index = 0; index < self.reasons.length; index++) {
+												var element = self.reasons[index];
+												if (self.txtReason == element.reasonCode) {
+													isExist = true;
+													break;
+												}
+											}
+											if (!isExist) {
+												self.reasons.push(res.data)
+											} else {
+												self.$toast('已扫描过相同缺陷代码');
+											}
+											self.txtReason = ''
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 5: //弹夹盒号
+								//判断当前弹夹盒号是否存在
+								var isExist = false;
+								for (var index = 0; index < self.bufferBoxCodes.length; index++) {
+									var element = self.bufferBoxCodes[index];
+									if (element == self.txtBufferBoxCode) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.bufferBoxCodes.push(self.txtBufferBoxCode)
+								} else {
+									self.$toast('已扫描过相同弹夹盒号');
+								}
+								self.txtBufferBoxCode = ''
+								break;
+							case 6: //成型来料
+								//判断当前成型来料是否存在
+								var isExist = false;
+								for (var index = 0; index < self.subCardCodes.length; index++) {
+									var element = self.subCardCodes[index];
+									if (element.subCardCode == self.subCardCode) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.subCardCodes.push({
+										subCardCode: self.subCardCode,
+										subBoxCode: self.subBoxCode
+									})
+									console.log(self.subCardCodes);
+								} else {
+									self.$toast('已扫描过相同成型料号');
+								}
+								self.onFocus(1)
+								self.subCardCode = ''
+								self.subBoxCode = ''
+								break;
+							case 7: //成型来料
+								//判断当前成型来料是否存在
+								var isExist = false;
+								for (var index = 0; index < self.subCardCodes.length; index++) {
+									var element = self.subCardCodes[index];
+									if (element.subCardCode == self.subCardCode) {
+										isExist = true;
+										break;
+									}
+								}
+								if (!isExist) {
+									self.subCardCodes.push({
+										subCardCode: self.subCardCode,
+										subBoxCode: self.subBoxCode
+									})
+									console.log(self.subCardCodes);
+								} else {
+									self.$toast('已扫描过相同成型料号');
+								}
+								self.onFocus(1)
+								self.subCardCode = ''
+								self.subBoxCode = ''
+								break;
+							case 8: //对比上一批来料
+
+								// 检查两个卡号长度是否足够
+								if(this.lastCardID=="wu"){
+									this.lastCardFlag= true;
+								}
+								else if ((this.cardID.length >= 7 && this.lastCardID.length >= 7)) {
+									this.lastCardFlag= true;
+									// 提取第2到第7位字符（注意JavaScript字符串索引从0开始）
+									
+									const cardIDPart = this.cardID.substring(1, 7);
+									const lastCardIDPart = this.lastCardID.substring(1, 7);
+
+									// 比较并设置标志
+									if(cardIDPart === lastCardIDPart){
+										self.$toast('此卡为小结批');
+									}else{
+										self.$toast('此卡为大结批');
+									}
+								} else {
+									// 如果卡号长度不足，设置为false
+									this.lastCardFlag= false;
+									console.warn('卡号长度不足，无法比较第2到第7位');
+								}
+								break;
+						}
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed7.focus();
+						} else if (type == 1) {
+							self.$refs.filed6.focus();
+						}
+					},
+
+					//删除
+					onDelete: function(type, index) {
+						var self = this;
+						switch (type) {
+							case 1: //盒号
+								self.boxCodes.splice(index, 1)
+								break;
+							case 2:
+								self.equipments.splice(index, 1)
+								break;
+							case 3: //物料
+								self.materials.splice(index, 1)
+								break;
+							case 4: //缺陷
+								self.reasons.splice(index, 1)
+								break;
+							case 5: //弹夹
+								self.bufferBoxCodes.splice(index, 1)
+								break;
+							case 6: //弹夹
+								self.subCardCodes.splice(index, 1)
+								break;
+						}
+					},
+					//显示设备选择弹窗
+					showequipmentspopup: function() {
+						this.equipmentspopup = true;
+						this.selectedequipmentsCode = [];
+						this.getequipments();
+					},
+					//获取设备列表
+					getequipments: function() {
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/equipments',
+							type: 'GET',
+							data: {
+								cardID: self.cardID,
+								equipmentName: self.equipmentName
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.popupequipmentsList = res.data;
+
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					//确认选择设备
+					confirmPopupequipments: function() {
+						var self = this;
+						if (this.selectedequipmentsCode.length == 0) {
+							self.$toast('请先选择设备！');
+							return
+						}
+						var hasRepeat = false;
+						for (var index = 0; index < self.selectedequipmentsCode.length; index++) {
+							var element = self.selectedequipmentsCode[index];
+							var bf1 = false;
+							for (var k = 0; k < self.equipments.length; k++) {
+								var item = self.equipments[k];
+								if (item.equipmentCode == element) {
+									bf1 = true;
+									break;
+								}
+							}
+							if (bf1 == false) {
+								for (var j = 0; j < self.popupequipmentsList.length; j++) {
+									var model1 = self.popupequipmentsList[j];
+									if (model1.equipmentCode == element) {
+										self.equipments.push(model1);
+									}
+								}
+							} else {
+								hasRepeat = true;
+							}
+						}
+						if (hasRepeat) {
+							self.$toast('已为您筛选掉重复的设备！');
+						}
+						this.activeNames = ['2'];
+						this.equipmentspopup = false;
+					},
+					//显示缺陷选择弹窗
+					showreasonspopup: function() {
+						this.reasonspopup = true;
+						this.selectedreasonsCode = [];
+						this.getreasons();
+					},
+					//获取缺陷列表
+					getreasons: function() {
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/reasons',
+							type: 'GET',
+							data: {
+								cardID: self.cardID,
+								reasonName: self.reasonName
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.popupreasonsList = res.data;
+
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					//确认选择缺陷
+					confirmPopupreasons: function() {
+						var self = this;
+						if (this.selectedreasonsCode.length == 0) {
+							self.$toast('请先选择缺陷！');
+							return
+						}
+						var hasRepeat = false
+						for (var index = 0; index < self.selectedreasonsCode.length; index++) {
+							var element = self.selectedreasonsCode[index];
+							var bf1 = false;
+							for (var k = 0; k < self.reasons.length; k++) {
+								var item = self.reasons[k];
+								if (item.reasonCode == element) {
+									bf1 = true;
+									break;
+								}
+							}
+							if (bf1 == false) {
+								for (var j = 0; j < self.popupreasonsList.length; j++) {
+									var model1 = self.popupreasonsList[j];
+									if (model1.reasonCode == element) {
+										self.reasons.push(model1);
+									}
+								}
+							} else {
+								hasRepeat = true;
+							}
+						}
+						if (hasRepeat) {
+							self.$toast('已为您筛选掉重复的缺陷！');
+						}
+						this.activeNames = ['4']
+						this.reasonspopup = false;
+					},
+
+
+					//操作 type // 1--进站 /// 2--上机 /// 3--出站 /// 4--测试出站 /// 5--完工
+					cardoperation: function(type) {
+						var self = this;
+						var type = this.cardoperationType;
+						var saveData = {
+							cardID: self.cardID, //--工卡ID
+							type: type, // --操作类型   /// 1--进站 /// 2--上机 /// 3--出站 /// 4--测试出站 /// 5--完工
+							curNum: self.basicForm.curNum, //-- 当前数量
+							stationCode: self.basicForm.stationCode, //--工序编码
+							curStepCode: self.basicForm.curStepCode, //-- 工步编码
+							handler: localStorage.userCode,
+							handlerName: localStorage.userName
+						}
+						var boxcode = '';
+						if (this.basicForm.boxFlag && self.boxCodes.length == 0) {
+							self.$toast('请填写盒号！');
+							return
+						}
+						if (this.basicForm.bufferBoxFlag && self.bufferBoxCodes.length == 0) {
+							self.$toast('请填写弹夹盒号！');
+							return
+						}
+						if (this.basicForm.weightFlag && self.basicForm.weight == '') {
+							self.$toast('请填写重量！');
+							return
+						}
+
+						if (this.basicForm.frameFlag && self.basicForm.frameQuantity == '') {
+							self.$toast('请填写框架条数！');
+							return
+						}
+						if (this.subCardFlag == '1') {
+							if (this.equCode != this.equipments[0].equipmentCode) {
+								self.$toast('设备比对不成功无法进行开工！' + this.equipments[0].equipmentCode);
+
+								return;
+							}
+							if (!this.deepCompareArrays(this.subCards, this.subCardCodes)) {
+								console.log("this.subCards: " + JSON.stringify(this.subCards));
+								self.$toast('比对不成功无法进行开工！' + JSON.stringify(this.subCards, null, 2));
+
+								return;
+							}
+							if(!self.lastCardFlag){
+								console.log("this.lastCardID: " + this.lastCardID);
+								console.log("this.cardID: " + this.cardID);
+								self.$toast('请对比上批次二维码后，再次开工！' );
+								
+								return;
+							}
+
+						}
+						if (this.testCount == 0) {
+
+							self.$toast('请用pda进行测试板比对！');
+
+							return;
+
+
+						}
+						if (this.basicForm.curStepCode == "121010") {
+							if (this.basicForm.IsTC == "2" || this.basicForm.IsTC == "3") {
+								self.$dialog.confirm({
+									title: '提示',
+									message: '当前工卡后固化需要260℃回流焊，是否继续报工?',
+								}).then(function() {
+
+								}).catch(function() {
+									// on cancel
+									return;
+								});
+							}
+						}
+
+						if (this.basicForm.curStepCode == "130020") {
+							if (this.basicForm.IsTC == "2" || this.basicForm.IsTC == "6") {
+								self.$dialog.confirm({
+									title: '提示',
+									message: '当前工卡成型需要10次TC，是否继续报工?',
+								}).then(function() {
+
+								}).catch(function() {
+									// on cancel
+									return;
+								});
+							}
+							if (this.basicForm.IsTC == "3") {
+								self.$dialog.confirm({
+									title: '提示',
+									message: '当前工卡成型需要5次TC，是否继续报工?',
+								}).then(function() {
+
+								}).catch(function() {
+									// on cancel
+									return;
+								});
+							}
+							if (this.basicForm.IsTC == "4") {
+								self.$dialog.confirm({
+									title: '提示',
+									message: '当前工卡成型后需要220℃回流焊10次TC，是否继续报工?',
+								}).then(function() {
+
+								}).catch(function() {
+									// on cancel
+									return;
+								});
+							}
+							if (this.basicForm.IsTC == "5") {
+								self.$dialog.confirm({
+									title: '提示',
+									message: '当前工卡成型后需要220℃回流焊5次TC，是否继续报工?',
+								}).then(function() {
+
+								}).catch(function() {
+									// on cancel
+									return;
+								});
+							}
+
+						}
+						if (self.boxCodes && self.boxCodes.length > 0) {
+							boxcode = self.boxCodes.toString()
+						}
+
+
+						switch (type) {
+							case 2: // 2--上机
+								saveData.boxCode = boxcode; //--盒号
+								if (!this.basicForm.frameFlag) {
+									for (var i = 0; i < self.materials.length; i++) {
+										if (self.materials[i].qty == '' || self.materials[i].qty == undefined) {
+											self.$toast('请填写使用物料的数量！');
+											return
+										}
+									}
+								}
+								saveData.bufferBoxCodes = self.bufferBoxCodes; //弹夹号
+								//saveData.frameQuantity = self.basicForm.frameQuantity;//--框架条数 
+								saveData.weight = self.basicForm.weight; //--重量 
+								saveData.productTime = self.basicForm.productTime; //--生产时间 
+								saveData.waitingTime = self.basicForm.waitingTime; //--等待时间 
+								saveData.mtba = self.basicForm.mtba; //--MTBA 
+								saveData.uph = self.basicForm.uph; //--UPH 
+								saveData.ntoUph = self.basicForm.ntoUph; //--净UPH 
+								saveData.auxiliaryTimes = self.basicForm.auxiliaryTimes; //--辅助次数 
+								saveData.remark = self.basicForm.remark; //--备注 
+								saveData.equipments = self.equipments; //--设备集合
+								saveData.materials = self.materials; //--物料集合
+								saveData.carryBoxCode = self.carryBoxCode; //--容器号
+								break;
+							case 3: // 3--出站
+								const regex = /^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]$/;
+								const xs = /^\d+\.?\d+$/;
+								if (this.basicForm.mtbaFlag && self.basicForm.productTime == undefined) {
+									self.$toast('请填写生产时间！');
+									return
+								}
+								if (this.basicForm.mtbaFlag && !regex.test(this.basicForm.productTime)) {
+									self.$toast('生产时间格式不正确！');
+									return
+								}
+								if (this.basicForm.mtbaFlag && self.basicForm.waitingTime == undefined) {
+									self.$toast('请填写待机时间！');
+									return
+								}
+								if (this.basicForm.mtbaFlag && !regex.test(this.basicForm.waitingTime)) {
+									self.$toast('待机时间格式不正确！');
+									return
+								}
+								if (this.basicForm.mtbaFlag) {
+									if (self.basicForm.mtba == undefined) {
+										self.$toast('请填写MTBA！');
+										return
+									}
+									if (this.equipments[0].supplierName == "KNS" && !xs.test(this.basicForm.mtba)) {
+										self.$toast('MTBA格式不正确！');
+										return
+									}
+									if (this.equipments[0].supplierName != "KNS" && !regex.test(this.basicForm
+											.mtba)) {
+										self.$toast('MTBA格式不正确！');
+										return
+									}
+								}
+								if (this.basicForm.mtbaFlag && self.basicForm.uph == undefined) {
+									self.$toast('请填写UPH！');
+									return
+								}
+								if (this.basicForm.mtbaFlag && self.basicForm.ntoUph == undefined) {
+									self.$toast('请填写净UPH！');
+									return
+								}
+								if (this.basicForm.mtbaFlag && self.basicForm.auxiliaryTimes == undefined) {
+									self.$toast('请填写辅助次数！');
+									return
+								}
+								saveData.boxCode = boxcode; //--盒号
+								saveData.bufferBoxCodes = self.bufferBoxCodes; //弹夹号
+								saveData.frameQuantity = self.basicForm.frameQuantity; //--框架条数 
+								saveData.weight = self.basicForm.weight; //--重量 
+								saveData.mtbaFlag = self.basicForm.mtbaFlag; //--重量 
+								saveData.productTime = self.basicForm.productTime; //--生产时间 
+								saveData.waitingTime = self.basicForm.waitingTime; //--等待时间 
+								saveData.mtba = self.basicForm.mtba; //--MTBA 
+								saveData.uph = self.basicForm.uph; //--UPH 
+								saveData.ntoUph = self.basicForm.ntoUph; //--净UPH 
+								saveData.auxiliaryTimes = self.basicForm.auxiliaryTimes; //--辅助次数 
+								saveData.remark = self.basicForm.remark; //--备注 
+								saveData.equipments = self.equipments; //--设备集合
+								saveData.reasons = self.reasons; //--缺陷集合
+								saveData.materials = self.materials; //--物料集合
+								break;
+							case 4: // 4--测试出站 
+								saveData.boxCode = boxcode; //--盒号
+								saveData.bufferBoxCodes = self.bufferBoxCodes; //弹夹号
+								saveData.frameQuantity = self.basicForm.frameQuantity; //--框架条数 
+								saveData.FTyield = self.basicForm.FTyield; //--初测良率 
+								saveData.weight = self.basicForm.weight; //--重量 
+								saveData.productTime = self.basicForm.productTime; //--生产时间 
+								saveData.waitingTime = self.basicForm.waitingTime; //--等待时间 
+								saveData.mtba = self.basicForm.mtba; //--MTBA 
+								saveData.uph = self.basicForm.uph; //--UPH 
+								saveData.ntoUph = self.basicForm.ntoUph; //--净UPH 
+								saveData.auxiliaryTimes = self.basicForm.auxiliaryTimes; //--辅助次数 
+								saveData.remark = self.basicForm.remark; //--备注 
+								saveData.programeName = self.basicForm.programeName; //--备注 
+								saveData.equipments = self.equipments; //--设备集合
+								saveData.reasons = self.reasons; //--缺陷集合
+								saveData.sortings = self.sortings; //--分BIN集合
+								break;
+							default:
+								break;
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认' + self.btnName + '?',
+						}).then(function() {
+							// on confirm
+							self.$toast.loading({
+								message: '加载中...',
+								duration: 0,
+								forbidClick: true,
+							});
+							$.ajax({
+								url: serviceUrl + '/api/pda/cardoperation',
+								type: 'POST',
+								data: saveData,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									self.$toast.clear()
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											self.backLast();
+										})
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function() {
+									self.$toast.clear()
+									self.$toast('服务器错误！');
+								}
+							})
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//******************************************以下代码暂时废弃 ***********************************************
+
+					//设备选择相关代码
+					showequipmentsScan: function() {
+						this.dialogequipmentsScan = true;
+						this.dialogequipmentsList = [];
+						this.scanType = 1;
+					},
+					setequipments: function(equipmentCode) { //根据设备码获取设备信息
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getequipment',
+							type: 'GET',
+							data: {
+								equipmentCode: equipmentCode,
+								cardID: self.cardID
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									var isExist = false;
+									var code = res.data.equipmentCode;
+									for (var index = 0; index < self.dialogequipmentsList
+										.length; index++) {
+										var element = self.dialogequipmentsList[index];
+										if (code == element.equipmentCode) {
+											isExist = true;
+											break;
+										}
+									}
+									for (var index = 0; index < self.equipments.length; index++) {
+										var element = self.equipments[index];
+										if (code == element.equipmentCode) {
+											isExist = true;
+											break;
+										}
+									}
+									if (!isExist) {
+										self.dialogequipmentsList.push(res.data)
+									} else {
+										self.$toast('已扫描过相同设备，请扫描其他');
+									}
+									// if (self.dialogequipmentsList.findIndex(function (item) {
+									// 	return item.equipmentCode == res.data.equipmentCode
+									// }) == -1 && self.equipments.findIndex(function (item) {
+									// 	return item.equipmentCode == res.data.equipmentCode
+									// }) == -1) {
+									// 	self.dialogequipmentsList.push(res.data);
+									// } else {
+									// 	self.$toast('已扫描过相同设备，请扫描其他');
+									// }
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					onConfirmequipments: function() { //确认设备
+						this.equipments = this.equipments.concat(this.dialogequipmentsList);
+						this.activeNames = ['2']
+						this.dialogequipmentsScan = false;
+					},
+					delDialogequipments: function(index) { //删除扫描的设备
+						this.dialogequipmentsList.splice(index, 1)
+					},
+					delequipments: function(index) { //删除已选择的设备
+						this.equipments.splice(index, 1)
+					},
+
+					//缺陷选择相关代码
+					showreasonsScan: function() {
+						this.dialogreasonsScan = true;
+						this.dialogreasonsList = [];
+						this.scanType = 2;
+					},
+					setreasons: function(reasonCode) { //根据缺陷码获取缺陷信息
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getreason',
+							type: 'GET',
+							data: {
+								cardID: self.cardID,
+								reasonCode: reasonCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									var isExist = false;
+									var code = res.data.reasonCode;
+									for (var index = 0; index < self.dialogreasonsList.length; index++) {
+										var element = self.dialogreasonsList[index];
+										if (code == element.reasonCode) {
+											isExist = true;
+											break;
+										}
+									}
+									for (var index = 0; index < self.reasons.length; index++) {
+										var element = self.reasons[index];
+										if (code == element.reasonCode) {
+											isExist = true;
+											break;
+										}
+									}
+									if (!isExist) {
+										self.dialogreasonsList.push(res.data)
+									} else {
+										self.$toast('已扫描过相同缺陷代码，请扫描其他');
+									}
+									// if (self.dialogreasonsList.findIndex(function (item) {
+									// 	return item.reasonCode == res.data.reasonCode
+									// }) == -1 && self.reasons.findIndex(function (item) {
+									// 	return item.reasonCode == res.data.reasonCode
+									// }) == -1) {
+									// 	self.dialogreasonsList.push(res.data);
+									// } else {
+									// 	self.$toast('已扫描过相同设备，请扫描其他');
+									// }
+
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					onBeforeClose: function(action, done) {
+						if (action === "confirm") {
+							return done(false);
+						} else {
+							return done();
+							this.dialogreasonsScan = false
+						}
+					},
+					onConfirmreasons: function() { //确认缺陷
+						var self = this;
+						if (this.dialogreasonsList.length == 0) {
+							self.$toast('请先扫描缺陷代码！');
+							return
+						}
+						var noQTY = false;
+						for (var index = 0; index < self.dialogreasonsList.length; index++) {
+							var item = self.dialogreasonsList[index];
+							if (item.qty == undefined || item.qty == '') {
+								noQTY = true;
+							}
+						}
+						// this.dialogreasonsList.forEach(function (item) {
+						// 	if (item.qty == undefined || item.qty == '') {
+						// 		noQTY = true;
+						// 	}
+						// })
+						if (noQTY) {
+							this.dialogreasonsScan = true;
+							self.$toast('请填写好对应的缺陷数量！');
+						} else {
+							this.reasons = this.reasons.concat(this.dialogreasonsList);
+							this.activeNames = ['4']
+							this.dialogreasonsScan = false;
+						}
+
+					},
+					delDialogreasons: function(index) { //删除扫描的缺陷
+						this.dialogreasonsList.splice(index, 1)
+					},
+					delreasons: function(index) { //删除已选择的缺陷
+						this.reasons.splice(index, 1)
+					},
+
+					changeBinQty: function() { //修改测试分bin数量
+						if (this.sortings.length > 0) {
+							var totalNum = 0;
+							for (var index = 0; index < this.sortings.length; index++) {
+								var item = this.sortings[index];
+								totalNum += item.qty ? Number(item.qty) : 0
+							}
+							// this.sortings.forEach(function (item) {
+							// 	totalNum += item.qty ? Number(item.qty) : 0
+							// })
+							if (totalNum > this.basicForm.curNum) {
+								var number = totalNum - this.basicForm.curNum
+								this.bintips = '当前测试分bin数量小于当前数量，总数相差' + number
+							} else if (totalNum < this.basicForm.curNum) {
+								var number = this.basicForm.curNum - totalNum
+								this.bintips = '当前测试分bin数量小于当前数量，总数相差' + number
+							} else {
+								this.bintips = ''
+							}
+						}
+
+					},
+					//物料相关代码
+					showematerialScan: function() {
+						this.dialogmaterialScan = true;
+						this.dialogmaterialList = [];
+						this.scanType = 3;
+					},
+					setmaterial: function(materialContent) { //根据物料编码获取详情
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getmaterial',
+							type: 'GET',
+							data: {
+								cardID: self.cardID,
+								materialContent: materialContent
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									var isExist = false;
+									var code = res.data.materialCode;
+									for (var index = 0; index < self.dialogmaterialList
+										.length; index++) {
+										var element = self.dialogmaterialList[index];
+										if (code == element.materialCode) {
+											isExist = true;
+											break;
+										}
+									}
+									for (var index = 0; index < self.materials.length; index++) {
+										var element = self.materials[index];
+										if (code == element.materialCode) {
+											isExist = true;
+											break;
+										}
+									}
+									if (!isExist) {
+										self.dialogmaterialList.push(res.data)
+									} else {
+										self.$toast('已扫描过相同设备，请扫描其他');
+									}
+									// if (self.dialogmaterialList.findIndex(function (item) {
+									// 	return item.materialCode == res.data.materialCode
+									// }) == -1 && self.materials.findIndex(function (item) {
+									// 	return item.materialCode == res.data.materialCode
+									// }) == -1) {
+									// 	self.dialogmaterialList.push(res.data);
+									// } else {
+									// 	self.$toast('已扫描过相同设备，请扫描其他');
+									// }
+
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					onConfirmmaterial: function() { //确认设备
+						this.materials = this.materials.concat(this.dialogmaterialList);
+						this.activeNames = ['3']
+						this.dialogmaterialScan = false;
+					},
+					delDialogmaterial: function(index) { //删除扫描的设备
+						this.dialogematerialList.splice(index, 1)
+					},
+					delmaterials: function(index) { //删除已选择的设备
+						this.materials.splice(index, 1)
+					},
+					//盒号相关代码
+					showeboxCodeScan: function() {
+						this.dialogboxCodeScan = true;
+						this.dialogboxCodeList = [];
+						this.scanType = 4;
+					},
+					setboxCode: function(boxCodeContent) { //根据物料编码获取详情
+						var self = this;
+						var Arr = boxCodeContent.split('-');
+						var code = Arr[Arr.length - 1];
+						var boxCodeList = self.basicForm.boxCode ? self.basicForm.boxCode.split(',') : []
+						var isExist = false;
+						for (var index = 0; index < boxCodeList.length; index++) {
+							var element = boxCodeList[index];
+							if (code == element) {
+								isExist = true;
+								break;
+							}
+						}
+						for (var index = 0; index < self.dialogboxCodeList.length; index++) {
+							var element = self.dialogboxCodeList[index];
+							if (code == element) {
+								isExist = true;
+								break;
+							}
+						}
+						if (!isExist) {
+							self.dialogboxCodeList.push(code)
+						} else {
+							self.$toast('已扫描过相同盒号，请扫描其他');
+						}
+						// if (this.dialogboxCodeList.findIndex(function (item) { return item == code }) == -1 && boxCodeList.findIndex(function (item) { return item == code }) == -1) {
+						// 	this.dialogboxCodeList.push(code)
+						// }
+						// else {
+						// 	self.$toast('已扫描过相同盒号，请扫描其他');
+						// }
+					},
+					onConfirmboxCode: function() { //确认设备
+						this.dialogboxCodeScan = false;
+						var self = this;
+						if (self.basicForm.boxCode == undefined || self.basicForm.boxCode == '') {
+							self.basicForm.boxCode = this.dialogboxCodeList.toString();
+						} else {
+							self.basicForm.boxCode = self.basicForm.boxCode + ',' + this.dialogboxCodeList
+								.toString();
+						}
+					},
+					delDialogboxCode: function(index) { //删除扫描的设备
+						this.dialogeboxCodeList.splice(index, 1)
+					},
+
+				}
+			})
+		</script>
+
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-left: 16px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+
+</html>

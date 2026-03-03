@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "D:\\Android\\app\\build\\intermediates\\res\\merged\\debug\\layout\\activity_main.xml",
+        "source": "D:\\Android\\app\\src\\main\\res\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "D:\\Android\\app\\build\\intermediates\\res\\merged\\debug\\layout\\activity_selection_barcode.xml",
+        "source": "D:\\Android\\app\\src\\main\\res\\layout\\activity_selection_barcode.xml"
+    },
+    {
+        "merged": "D:\\Android\\app\\build\\intermediates\\res\\merged\\debug\\layout\\activity_barcode.xml",
+        "source": "D:\\Android\\app\\src\\main\\res\\layout\\activity_barcode.xml"
+    },
+    {
+        "merged": "D:\\Android\\app\\build\\intermediates\\res\\merged\\debug\\layout\\scanner_select_dialog.xml",
+        "source": "D:\\Android\\app\\src\\main\\res\\layout\\scanner_select_dialog.xml"
+    }
+]

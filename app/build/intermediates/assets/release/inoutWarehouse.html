@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>线边库</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-cell title="仓库名称" v-model="storeName" />
+			</div>
+		</div>
+		<div>
+			<div>
+				<van-field v-model="locationCode" label="仓位扫描" input-align="right" placeholder="请输入或扫描仓位码"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required />
+			</div>
+			<div style="padding: 0 15px;background: #fff;">
+				<div>
+					<van-cell title="仓位名称" v-model="locationName" />
+				</div>
+			</div>
+		</div>
+		<div v-if="housetype==2 || housetype == 3">
+			<div>
+				<van-field v-model="modelInfo.partNumber" label="物料扫描" input-align="right" placeholder="请输入或扫描物料码"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required />
+			</div>
+			<div style="padding: 0 15px;background: #fff;">
+				<div>
+					<van-cell title="物料料号" v-model="modelInfo.partNumber" />
+				</div>
+				<div>
+					<van-cell title="型号" v-model="modelInfo.pModel" />
+				</div>
+				<div>
+					<van-cell title="批次" v-model="modelInfo.batchNumber" />
+				</div>
+				<div>
+					<van-field v-model="qty" label="数量" type="number" input-align="right" placeholder="请输入" required />
+				</div>
+				<div v-if="housetype==2">
+					<van-field v-model="dieQty" label="芯片片数" type="digit" input-align="right" placeholder="请输入"
+						required />
+				</div>
+			</div>
+		</div>
+		<div v-if="housetype==1">
+			<div>
+				<van-field v-model="cardInfo.cardID" label="工卡扫描" input-align="right" placeholder="请输入或扫描工卡"
+					@keyup.enter.native="onEnter(3)" ref="filed3" required />
+			</div>
+			<div style="padding: 0 15px;background: #fff;">
+				<div>
+					<van-cell title="物料料号" v-model="cardInfo.partNumber" />
+				</div>
+				<div>
+					<van-cell title="封装形式" v-model="cardInfo.packageName" />
+				</div>
+				<div>
+					<van-cell title="产品型号" v-model="cardInfo.pModel" />
+				</div>
+				<div>
+					<van-cell title="数量" v-model="cardInfo.qty" />
+				</div>
+			</div>
+			<div>
+				<van-field v-model="comments" label="容器扫描" input-align="right" placeholder="请输入或扫描仓位码" ref="filed4" required />
+			</div>
+			<!-- <div>
+				<van-cell title="标签扫描核对" v-model="value4" is-link @click="showDilog(4)" />
+			</div> -->
+		</div>
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">{{btnName}}</van-button>
+				</van-col>
+			</van-row>
+		</div>
+		<div>
+			<van-dialog :title="dialogTitle" v-model="showScan" show-cancel-button :before-close="onClose"
+				@confirm="onConfirm">
+				<van-cell-group>
+					<van-field v-model="Barcode" :label="dialogLabel" input-align="right" placeholder="扫描或手动输入" />
+				</van-cell-group>
+			</van-dialog>
+		</div>
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showScan: false,
+				Barcode: '',
+				title: '线边库',
+				storeCode: '',//仓库编号
+				storeName: '',//仓库名称
+				storeType: '',//仓库类型
+				type: 1,//1入库 2 出库
+				dialogTitle: '',
+				dialogLabel: '',
+				scanType: '',
+				value: '',
+				value1: '',//仓位
+				value2: '',//物料
+				value3: '',//工卡
+				value4: '',//标签
+				btnName: '',//按钮名称
+				locationCode: '',//仓位编码
+				locationName: '',//仓位名称
+				modelInfo: {},//物料信息
+				cardInfo: {},//工卡信息
+				qty: '',
+				dieQty: '',
+				menuType: '',
+				housetype: '',//仓库类型 1:成品仓  2:晶圆仓 3:物料仓
+				comments: '',//容器编码
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+				var type = getQueryVariable('type');
+				this.type = type ? type : '1';
+				if (this.type == 1) {
+					this.btnName = '入库'
+					this.title = '线边仓入库'
+				} else if (this.type == 2) {
+					this.btnName = '出库'
+					this.title = '线边仓出库'
+				}
+				this.storeCode = getQueryVariable('storeCode');//仓库编码
+				this.storeName = decodeURI(getQueryVariable('name'));//仓库名称
+				this.housetype = getQueryVariable('storeType'); //仓库类型 1:成品仓  2:晶圆仓 3:物料仓
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//出入库提交
+				save: function () {
+					var self = this;
+					var list = [];
+					if (this.housetype == 1) {
+						list.push({
+							warehouseCode: self.storeCode,
+							locationCode: self.locationCode,
+							partnumber: self.cardInfo.partNumber ? self.cardInfo.partNumber : '',
+							pModel: self.cardInfo.pModel ? self.cardInfo.pModel : '',
+							qty: self.cardInfo.qty ? self.cardInfo.qty : '',
+							qty2: '',
+							listNumber: self.cardInfo.cardID ? self.cardInfo.cardID : '',
+							pStandard: self.cardInfo.Spec ? self.cardInfo.Spec : '',
+							batchNumber: self.cardInfo.cardID ? self.cardInfo.cardID : '',
+							comments: self.comments
+						})
+					} else if (this.housetype == 2) {
+						list.push({
+							warehouseCode: self.storeCode,
+							locationCode: self.locationCode,
+							partnumber: self.modelInfo.partNumber ? self.modelInfo.partNumber : '',
+							pModel: self.modelInfo.pModel ? self.modelInfo.pModel : '',
+							qty: self.qty ? self.qty : '',
+							qty2: self.dieQty ? self.dieQty : '',
+							listNumber: '',
+							pStandard: self.modelInfo.Spec ? self.modelInfo.Spec : '',
+							batchNumber: self.modelInfo.batchNumber ? self.modelInfo.batchNumber : '',
+						})
+					} else if (this.housetype == 3) {
+						list.push({
+							warehouseCode: self.storeCode,
+							locationCode: self.locationCode,
+							partnumber: self.modelInfo.partNumber ? self.modelInfo.partNumber : '',
+							pModel: self.modelInfo.pModel ? self.modelInfo.pModel : '',
+							qty: self.qty ? self.qty : '',
+							qty2: '',
+							listNumber: '',
+							pStandard: self.modelInfo.Spec ? self.modelInfo.Spec : '',
+							batchNumber: self.modelInfo.batchNumber ? self.modelInfo.batchNumber : '',
+						})
+					}
+					var param = {
+						storeCode: self.storeCode,
+						locationCode: self.locationCode,
+						inorout: self.type,
+						lineHourseInputs: list,
+						handler: localStorage.userCode,
+						handlerName: localStorage.userName
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认' + self.btnName + '?',
+					}).then(function () {
+						// on confirm
+						$.ajax({
+							url: serviceUrl + '/api/pda/lineoperatesubmit',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.modelInfo = {};
+										self.cardInfo = {};
+										self.comments = '';
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.modelInfo = {};
+						self.cardInfo = {};
+						self.locationCode = '';
+						self.locationName = '';
+						self.comments = '';
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //仓位			
+							if (this.locationCode) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/getlocation',
+									type: 'GET',
+									data: {
+										storeCode: self.storeCode,
+										locationCode: self.locationCode
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.$toast('校验成功');
+											self.locationCode = res.data.locationCode;
+											self.locationName = res.data.locationName;
+											self.onFocus(type);
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.$toast('服务器错误');
+									}
+								})
+							}
+							break;
+						case 2: //物料			
+							if (this.modelInfo && this.modelInfo.partNumber) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/getmaterial',
+									type: 'GET',
+									data: {
+										cardID: '',
+										materialContent: self.modelInfo.partNumber
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.$toast('校验成功');
+											self.modelInfo = res.data;
+											self.onFocus(type);
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.$toast('服务器错误');
+									}
+								})
+							}
+							break;
+						case 3: //工卡			
+							if (this.cardInfo && this.cardInfo.cardID) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/getcardbasicinfo',
+									type: 'GET',
+									data: {
+										cardID: self.cardInfo.cardID
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.$toast('校验成功');
+											self.cardInfo = res.data;
+											self.onFocus(type);
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.$toast('服务器错误');
+									}
+								})
+							}
+							break;
+						case 4: //标签			
+							this.value4 = this.Barcode
+							break;
+						default:
+							break;
+					}
+				},
+
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						if (this.housetype == 2 || this.housetype == 3) {
+							self.$refs.filed2.focus();
+						} else if (this.housetype == 1) {
+							self.$refs.filed3.focus();
+						}
+					} else if (type == 2) {
+						self.$refs.filed2.blur();
+					} else if (type == 3) {
+						self.$refs.filed4.focus();
+					}
+				},
+
+				//丢失焦点触发
+				onBlur: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //仓位			
+							if (this.locationCode) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/getlocation',
+									type: 'GET',
+									data: {
+										storeCode: self.storeCode,
+										locationCode: self.locationCode
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.locationCode = res.data.locationCode;
+											self.locationName = res.data.locationName;
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.$toast('服务器错误');
+									}
+								})
+							}
+							break;
+						case 2: //物料			
+							if (this.modelInfo && this.modelInfo.partNumber) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/getmaterial',
+									type: 'GET',
+									data: {
+										cardID: '',
+										materialContent: self.modelInfo.partNumber
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.modelInfo = res.data;
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.$toast('服务器错误');
+									}
+								})
+							}
+							break;
+						case 3: //工卡			
+							if (this.cardInfo && this.cardInfo.cardID) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/getcardbasicinfo',
+									type: 'GET',
+									data: {
+										cardID: self.cardInfo.cardID
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.cardInfo = res.data;
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.$toast('服务器错误');
+									}
+								})
+							}
+							break;
+						case 4: //标签			
+							this.value4 = this.Barcode
+							break;
+						default:
+							break;
+					}
+				},
+
+				showDilog: function (menuType) {
+					this.menuType = menuType;
+					if (menuType == 1) {
+						this.dialogTitle = '仓位选择'
+						this.dialogLabel = '仓位'
+					} else if (menuType == 2) {
+						this.dialogTitle = '物料选择'
+						this.dialogLabel = '物料'
+					} else if (menuType == 3) {
+						this.dialogTitle = '工卡扫描'
+						this.dialogLabel = '工卡'
+					} else if (menuType == 4) {
+						this.dialogTitle = '标签扫描'
+						this.dialogLabel = '标签'
+					}
+					this.showScan = true;
+					this.Barcode = '';
+				},
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.Barcode = codedata.Barcode;
+					if (this.menuType == 1) { //仓位
+
+					} else if (this.menuType == 2) {//物料
+
+					}
+				},
+				onClose: function (action, done) {
+					if (action === "confirm") {
+						return done(false);
+					} else {
+						return done();
+						this.showScan = false
+					}
+				},
+				onConfirm: function () {
+					var self = this;
+					this.showScan = false;
+					switch (this.menuType) {
+						case 1: //仓位			
+							$.ajax({
+								url: serviceUrl + '/api/pda/getlocation',
+								type: 'GET',
+								data: {
+									storeCode: self.storeCode,
+									locationCode: self.Barcode
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										self.locationCode = res.data.locationCode;
+										self.locationName = res.data.locationName;
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function () {
+									self.$toast('服务器错误');
+								}
+							})
+							break;
+						case 2: //物料			
+							//this.value2 = this.Barcode
+							$.ajax({
+								url: serviceUrl + '/api/pda/getmaterial',
+								type: 'GET',
+								data: {
+									cardID: '',
+									materialContent: self.Barcode
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										self.modelInfo = res.data;
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function () {
+									self.$toast('服务器错误');
+								}
+							})
+							break;
+						case 3: //工卡			
+							//this.value3 = this.Barcode
+							$.ajax({
+								url: serviceUrl + '/api/pda/getcardbasicinfo',
+								type: 'GET',
+								data: {
+									cardID: self.Barcode
+								},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										self.cardInfo = res.data;
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function () {
+									self.$toast('服务器错误');
+								}
+							})
+							break;
+						case 4: //标签			
+							this.value4 = this.Barcode
+							break;
+						default:
+							break;
+					}
+
+				},
+				getDetail() {
+					this.$toast('获取详情');
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

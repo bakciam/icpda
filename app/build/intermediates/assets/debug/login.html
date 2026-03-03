@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>登录</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+	<style>
+		.footer p{margin:20px 0 0; padding: 0;line-height: 20px;}
+	</style>
+</head>
+
+<body class="loginbg">
+	<div id="app">
+		<div class="btn_set">
+			<van-button @click="showIP" icon="setting" type="info" />
+		</div>
+		<div class="logo"><img src="images/logo.png" /></div>
+		<div class="login_con">
+			<div>
+				<van-field v-model="usercode" placeholder="用户ID(请输入或扫描二维码)" @keyup.enter.native="onEnter(1)" autofocus
+					ref="filed1" clearable />
+			</div>
+			<div>
+				<van-field v-model="password" type="password" placeholder="密码" @keyup.enter.native="onEnter(2)" ref="filed2" clearable />
+			</div>
+			<div>
+				<van-button type="default" @click="login">登 录</van-button>
+			</div>
+		</div>
+		<!--<div>{{codedata}}</div>-->
+		<div class="footer">可直接扫描用户二维码登录<p>{{version}}</p><p style="color: #c0d6f3;font-size: 12px;">山东晶导微电子股份有限公司</p></div>
+		<div>
+			<van-dialog title="请优先设置服务器地址" v-model="showSetIP" @confirm="onConfirm" :before-close="onBeforeClose">
+				<van-cell-group>
+					<div>
+						<van-field v-model="ip" label="服务器IP" input-align="right" placeholder="请输入" />
+					</div>
+					<div>
+						<van-field v-model="sort" label="端口号" type="digit" input-align="right" placeholder="请输入" />
+					</div>
+				</van-cell-group>
+			</van-dialog>
+		</div>
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				usercode: '',
+				password: '',
+				cardid: '',
+				codedata: {},
+				showSetIP: false,
+				ip: '',
+				sort: '',
+				version:''
+			},
+			created: function () {
+				localStorage.userName = '';
+				localStorage.userCode = '';
+				localStorage.token = '';
+				localStorage.secret = '';
+				if (localStorage.IP && localStorage.IP != '' && localStorage.sort && localStorage.sort != '') {
+					this.ip = localStorage.IP ? localStorage.IP : '';
+					this.sort = localStorage.sort ? localStorage.sort : '';
+					serviceUrl = 'http://' + localStorage.IP + ':' + localStorage.sort + '/PDA';
+					// serviceUrl = 'http://' + localStorage.IP + ':' + localStorage.sort;
+				}
+				else {
+					this.showIP()
+				}
+				var _version = window.mainobj.GetLocalVersion();
+				this.version = _version?'版本号：'+_version:''
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			methods: {
+				showIP: function () {
+					this.showSetIP = true;
+				},
+				//验证版本
+				verifyVersion: function () {
+
+				},
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1:
+							$.ajax({
+								url: serviceUrl + '/api/pda/login',
+								type: 'POST',
+								data: {},
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								success: function (ures) {
+									var zLoing = true; //是否自动更新，如果为true继续登录界面，否则更新
+									if (ures.data) {
+										if (window.mainobj) {
+											var updateFlag = window.mainobj.sendVersionParams(ures.data.version, ures.data.downloadUrl);
+											if (updateFlag == false) {
+												zLoing = false;
+											}
+										}
+									}
+									if (zLoing == true) {
+										if (self.usercode) {
+											$.ajax({
+												url: serviceUrl + '/api/pda/login',
+												type: 'POST',
+												data: {
+													cardid: self.usercode
+												},
+												contentType: "application/x-www-form-urlencoded",
+												dataType: 'json',
+												success: function (res) {
+													if (res.code == 200) {
+														self.$toast('登录成功');
+														localStorage.userName = res.data.userName;
+														localStorage.userCode = res.data.userCode;
+														localStorage.token = res.data.token;
+														localStorage.secret = res.data.secret;
+														window.location.replace('index.html')
+													} else {
+														self.onFocus(type);
+													}
+												},
+												error: function () {
+													self.onFocus(type);
+												}
+											})
+										}
+									}
+								}
+							});
+							break;
+						case 2:
+							self.onFocus(type);
+							break;
+						default:
+							break;
+					}
+				},
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						this.login();
+					}
+				},
+				login: function (type) {
+					var self = this;
+					var param = {}
+					if (type == 2) {
+						param.cardid = self.cardid;
+					}
+					else {
+						if (this.usercode == undefined || this.usercode == '' || this.password == '') {
+							this.$toast('请输入用户ID和密码');
+							return
+						}
+						param.loginname = self.usercode;
+						param.password = self.password;
+					}
+					$.ajax({
+						url: serviceUrl + '/api/pda/getversion',
+						type: 'POST',
+						data: param,
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						success: function (ures) {
+							var zLoing = true;
+							if (ures.data) {
+								if (window.mainobj) {
+									var updateFlag = window.mainobj.sendVersionParams(ures.data.version, ures.data.downloadUrl);
+									if (updateFlag == false) {
+										zLoing = false;
+									}
+								}
+							}
+							if (zLoing == false) {
+								// self.$dialog.alert({
+								// 	title: '提示',
+								// 	message: `发现新版本（${ures.data.version}），点击确认更新!`,
+								// }).then(function () {
+								// 	$.ajax({
+								// 		url: serviceUrl + '/api/pda/login',
+								// 		type: 'POST',
+								// 		data: param,
+								// 		contentType: "application/x-www-form-urlencoded",
+								// 		dataType: 'json',
+								// 		success: function (res) {
+								// 			if (res.code == 200) {
+								// 				self.$toast('登录成功');
+								// 				localStorage.userName = res.data.userName;
+								// 				localStorage.userCode = res.data.userCode;
+								// 				localStorage.token = res.data.token;
+								// 				localStorage.secret = res.data.secret;
+								// 				window.location.replace('index.html')
+								// 			}
+								// 			else {
+								// 				self.$toast(res.msg);
+								// 			}
+								// 		},
+								// 		error: function (res) {
+								// 			self.$toast('网络异常！');
+								// 			//self.message = JSON.stringify(res);
+								// 		}
+								// 	})
+								// }).catch(function () {
+								// 	// on cancel
+								// });
+							} else {
+								$.ajax({
+									url: serviceUrl + '/api/pda/login',
+									type: 'POST',
+									data: param,
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function (res) {
+										if (res.code == 200) {
+											self.$toast('登录成功');
+											localStorage.userName = res.data.userName;
+											localStorage.userCode = res.data.userCode;
+											localStorage.token = res.data.token;
+											localStorage.secret = res.data.secret;
+											window.location.replace('index.html')
+										}
+										else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function (res) {
+										self.$toast('网络异常！');
+										//self.message = JSON.stringify(res);
+									}
+								})
+							}
+						},
+						error: function (res) {
+							self.$toast('网络异常！');
+							//self.message = JSON.stringify(res);
+						}
+					})
+
+
+				},
+				scanCode: function (data) {
+					this.codedata = JSON.parse(data);
+					this.cardid = this.codedata.Barcode;
+					this.login(2)
+				},
+				onBeforeClose(action, done) {
+					if (action === "confirm") {
+						return done(false);
+					}
+					else {
+						return done();
+						this.showSetIP = false
+					}
+				},
+				onConfirm: function () {
+					if (this.ip && this.ip != '' && this.sort && this.sort != '') {
+						if (localStorage.IP) {
+							localStorage.IP = this.ip
+						}
+						else {
+							localStorage.setItem('IP', this.ip)
+						}
+						if (localStorage.sort) {
+							localStorage.sort = this.sort
+						}
+						else {
+							localStorage.setItem('sort', this.sort)
+						}
+						serviceUrl = 'http://' + localStorage.IP + ':' + localStorage.sort + '/PDA';
+						// serviceUrl = 'http://' + localStorage.IP + ':' + localStorage.sort;
+						this.showSetIP = false
+					}
+					else {
+						this.$toast('请输入IP地址和端口号');
+					}
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>
