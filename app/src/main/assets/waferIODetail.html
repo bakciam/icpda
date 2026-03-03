@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>成品备货</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app">
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-field v-model="orderCode" label="领料单" input-align="right" placeholder="请输入或扫描发货单"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="boxCode" label="料号" input-align="right" placeholder="请输入或扫描箱号"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+		</div>
+		<div>
+			<van-cell-group title="料号清单">
+			  <!-- v-for 必须加 key（绑定唯一标识，优化渲染性能） -->
+			  <div v-for="(item, index) in boxs" :key="index"> <!-- 若 item 有唯一 id，优先用 :key="item.id" -->
+			    <!-- 修复字符串拼接：用模板字符串 `` 包裹，变量用 ${} 引用 -->
+			    <van-cell :title="`${item.boxCode}: ${item.qty}`" center>
+			      <!-- 优化：判断 hasScan 为 true 时显示（避免 undefined 视为 false） -->
+			      <template #right-icon v-if="item.hasScan === true">
+			        <span class="custom-rigth-icon">已核对</span>
+			        <van-icon name="success" class="success-icon" color="#1989fa" />
+			      </template>
+			    </van-cell>
+			  </div>
+			</van-cell-group>
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">{{btnName}}</van-button>
+				</van-col>
+			</van-row>
+		</div>
+
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showScan: false,
+				btnName: '确认',
+				title: '成品备货',
+
+				warehouseCode: '',
+				warehouseName: '',
+				orderCode: '',//单号
+				boxCode: '',//箱号
+				boxs: [],//所有箱号
+				errorMsg1: "",
+				errorMsg2: "",
+				waferIoDetails:[],
+				
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+
+			},
+			created() {
+
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+
+				//出入库提交
+				save: function () {
+					var self = this;
+					if (self.orderCode == undefined || self.orderCode == '') {
+						self.$toast('请先输入或扫描入库单');
+						return;
+					}
+
+					for (var index = 0; index < self.boxs.length; index++) {
+						const element = self.boxs[index];
+						if (element.hasScan == false) {
+							self.$toast('请核对所有箱号');
+							return;
+						}
+					}
+
+				
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then()
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.warehouseCode = '';
+						self.warehouseName = '';
+						self.errorMsg1 = '';
+						self.errorMsg2 = '';
+						self.orderCode = '';
+						self.boxCode = '';
+						self.boxs = [];
+						self.$refs.filed1.focus();
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //入库单			
+							if (this.orderCode) {
+								self.boxs = []
+								$.ajax({
+									url: serviceUrl + '/api/pda/queryWaferIODetail',
+									type: 'GET',
+									data: {
+										ioCode: self.orderCode
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											console.log(res.data);
+											self.waferIoDetails=res.data.waferIoDetails;
+											
+											
+											self.errorMsg1 = ''
+											self.warehouseName = res.data.warehousename;
+											if (res.data.waferIoDetails) {
+												var list = res.data.waferIoDetails;
+												for (var i = 0; i < list.length; i++) {
+													const element = list[i];
+													var obj = {
+														boxCode: element.BatchNumber,
+														qty:element.Qty,
+														hasScan: false
+													}
+													self.boxs.push(obj)
+												}
+											}
+											self.onFocus(type);
+										} else {
+											self.errorMsg1 = res.msg ? res.msg : '发货单获取失败'
+										}
+									},
+									error: function () {
+										self.errorMsg1 = res.msg ? res.msg : '网络连接异常'
+									}
+								})
+							}
+							break;
+						case 2: // 箱号
+						  self = this;
+						  // 1. 先校验发货单是否已输入
+						  if (!self.orderCode) { // 简化判断：undefined/''/null 都视为未输入
+						    self.$toast('请先输入或扫描发货单');
+						    self.boxCode = '';
+						    return;
+						  }
+						
+						  // 2. 校验扫描字符串格式（必须是 4 个 * 分隔的字段，确保格式合法）
+						  const scanStr = self.boxCode.trim(); // 去除首尾空格（避免扫描误带空格）
+						  const scanParts = scanStr.split('*'); // 按 * 拆分字符串
+						
+						  if (scanParts.length !== 4) {
+						    self.$toast('扫描箱号格式错误！请重新扫描');
+						    self.boxCode = '';
+						    self.$refs.filed2.focus();
+						    return;
+						  }
+						
+						  // 3. 提取箱号（第3段）和数量（第4段）—— 核心修正：索引从 1→2（箱号）
+						  const scannedBoxCode = scanParts[2]; // 箱号：AS8FG4.1（对应示例第3段）
+						  const scannedQty = scanParts[3];    // 数量：166.659（对应示例第4段）
+						
+						  // 4. 双重匹配：箱号（scannedBoxCode）+ 数量（scannedQty）需与列表完全一致
+						  const list = self.boxs;
+						  let isMatch = false;
+						
+						  for (let i = 0; i < list.length; i++) {
+						    const element = list[i];
+						    // 数量转字符串匹配（避免数字类型 vs 字符串类型不匹配，如 166.659 vs "166.659"）
+						    const elementQtyStr = String(element.qty).trim(); 
+						    const scannedQtyStr = scannedQty.trim();
+						
+						    // 双重条件：箱号相等 + 数量相等（才视为匹配成功）
+						    if (element.boxCode === scannedBoxCode && elementQtyStr === scannedQtyStr) {
+						      element.hasScan = true; // 标记为已核对
+						      isMatch = true;
+						      break; // 找到匹配项，终止循环（提升性能）
+						    }
+						  }
+						
+						  // 5. 精准提示结果（区分不同失败场景）
+						  if (isMatch) {
+						    self.$toast.success('箱号+数量核对成功！'); // 匹配成功提示（可选）
+						  } else {
+						    // 判断是「箱号不存在」还是「箱号存在但数量不匹配」
+						    const boxExist = list.some(item => item.boxCode === scannedBoxCode);
+						    if (boxExist) {
+						      self.$toast(`箱号${scannedBoxCode}存在，但数量不匹配！`);
+						    } else {
+						      self.$toast(`箱号${scannedBoxCode}不在清单中！`);
+						    }
+						  }
+						
+						  // 6. 重置输入框并聚焦（方便下次扫描）
+						  self.boxCode = '';
+						  self.$refs.filed2.focus();
+						  break;
+					}
+				},
+
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						// self.$refs.filed2.blur();
+					}
+				},
+
+
+			}
+		})
+	</script>
+</body>
+
+</html>

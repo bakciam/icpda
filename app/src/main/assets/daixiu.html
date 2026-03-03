@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>设备待修列表</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-field v-model="equipmentCode" label="设备编码" input-align="right" required/>
+			</div>
+			<div>
+				<van-field v-model="userName" label="责任人" input-align="right" required @keyup.enter.native="onEnter()"/>
+			</div>
+			<div style="text-align:right;margin: 0 20px 0 0;">
+				<van-button slot="button" size="small" type="info" @click="onQuery()">查询
+				</van-button>
+			</div>
+			<div>
+				<van-cell-group title="待修设备列表">
+					<div class="confirm_dellist">
+						<div class="list_has_del" v-for="(item,index) in Device_List">
+							<span :style="{ whiteSpace: 'pre-wrap' }">{{index+1}}、设备编码：{{item.equipmentCode}}   设备状态：{{item.downOrUP}}   报修时间：{{item.generationTime}}</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="onCheck(item)">处理</span>
+							</div>
+						</div>
+					</div>
+				</van-cell-group>
+			</div>
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					showScan: false,
+					title: '设备待修列表',
+					equipmentCode: "",
+					equipmentCode: "",
+					userName: "",
+					Device_List: [] //设备编码
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {},
+				created() {
+					this.getDetail();
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//获取明细
+					getDetail: function() {
+						var self = this
+						$.ajax({
+							url: serviceUrl + '/api/pda/queryDevice',
+							type: 'GET',
+							data: {
+								userCode: localStorage.userCode,
+								userName: "",
+								equipmentCode: ""
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.Device_List = res.data;
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					//维修
+					onCheck: function (item) {
+						var self = this;
+						if(item.downOrUP == "待维修"){
+							window.location.href =
+								'pullForCheck.html?type=3&equipmentCode=' + item.equipmentCode
+						}else{
+							window.location.href =
+								'pullForCheck.html?type=2&equipmentCode=' + item.equipmentCode
+						}
+					},
+					//是否触发回车
+					onEnter: function () {
+						var self = this;
+						if (self.userName == undefined || self.userName == '') {
+							self.$toast('请先输入或扫描责任人工号');
+							self.userName = '';
+							return;
+						}
+						$.ajax({
+							url: serviceUrl + '/api/pda/getUser',
+							type: 'GET',
+							data: {
+								userID: self.userName
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								self.userName = res.data.userName;
+							},
+							error: function () {
+							}
+						});
+					},
+					//查询
+					onQuery: function () {
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/queryDevice',
+							type: 'GET',
+							data: {
+								userCode: localStorage.userCode,
+								userName: self.userName,
+								equipmentCode: self.equipmentCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.Device_List = [];
+									self.Device_List = res.data;
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

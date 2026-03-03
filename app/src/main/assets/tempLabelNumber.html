@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>临标数量</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-field v-model="labelCode" label="临时标签" input-align="right" placeholder="请输入或扫描临时标签"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div>
+				<van-cell title="绑定工卡" :value="cardID" v-if="cardID != ''" />
+			</div>
+			<div>
+				<van-field v-model="qty" label="数量" type="number" input-align="right" placeholder="请输入" ref="filed2"
+					required />
+			</div>
+			<div>
+				<van-cell title="Bin" is-link :value="binName" @click="chooseBin" />
+			</div>
+
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">确认</van-button>
+				</van-col>
+			</van-row>
+		</div>
+
+		<van-popup v-model="showBin" position="right" :style="{ width: '80%',height:'100%' }">
+			<div class="popup_list">
+				<div class="popub_title">分BIN列表</div>
+				<div class="pop_list">
+				<van-radio-group v-model="selectedBin">
+					<van-radio v-for="(item,index) in bins" :name="item.BinCode">
+						<div class="row_line">{{item.BinName}}</div>
+					</van-radio>
+				</van-radio-group>
+				</div>
+			</div>
+			<van-row class="popup_fixed_btn">
+				<van-col span="10">
+					<van-button color="#ccc" square block @click="showBin=false">取消</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" square block @click="confirmBin">确认选择</van-button>
+				</van-col>
+			</van-row>
+		</van-popup>
+
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showScan: false,
+				Barcode: '',
+				title: '临标数量',
+				qty: '',//数量
+				labels: [],//已扫临时标签
+				cardID: '',//工卡
+				labelCode: '',//标签
+
+				errorMsg1: "",
+				showBin: false,//显示分BIN
+				bins: [],//分BIN集合
+				selectedBin: '',
+				binName: '请选择'
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//出入库提交
+				save: function () {
+					var self = this;
+					if(!self.labelCode){
+						self.$toast('请扫描临时标签');
+						return;
+					}
+					if(!self.qty){
+						self.$toast('请输入数量');
+						return;
+					}
+					var param = {
+						templabelcode: self.labelCode,
+						qty: self.qty,
+						bincode: self.selectedBin,
+						modifyUser: localStorage.userCode,
+						modifyUserName: localStorage.userName
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then(function () {
+						$.ajax({
+							url: serviceUrl + '/api/pda/submittemplabel',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.labelCode = '';
+										self.qty = '';
+										self.selectedBin = '';
+										self.errorMsg1 = '';
+										self.binName = '';
+										self.cardID='';
+										self.$refs.filed1.focus();
+									})
+								} else {
+									self.$toast(res.msg);
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+								self.$refs.filed2.focus();
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.labelCode = '';
+						self.qty = '';
+						self.selectedBin = '';
+						self.errorMsg1 = '';
+						self.binName = '';
+						self.cardID='';
+						self.$refs.filed1.focus();
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//选择BIN
+				chooseBin: function () {
+					var self = this
+					if (self.labelCode == undefined || self.labelCode == '') {
+						self.$toast('请先输入或扫描临时标签');
+						return;
+					}
+					this.bins = []
+					$.ajax({
+						url: serviceUrl + '/api/pda/gettemplabelbins',
+						type: 'GET',
+						data: {
+							tempCode: self.labelCode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.bins = res.data
+
+								self.showBin = true;
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+
+				//确认选择BIN
+				confirmBin: function () {
+					var self = this;
+					if (this.selectedBin == undefined || this.selectedBin == '') {
+						self.$toast('请先选择BIN！');
+						return
+					}
+					for (var k = 0; k < self.bins.length; k++) {
+						var item = self.bins[k];
+						if (item.BinCode == self.selectedBin) {
+							self.binName = item.BinName
+							break;
+						}
+					}
+					this.showBin = false;
+				},
+
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //标签			
+							if (this.labelCode) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/gettemplabel',
+									type: 'GET',
+									data: {
+										tempCode: self.labelCode
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										self.errorMsg1 = ''
+										if (res.code == 200) {
+											if(!res.data.cardID){
+												self.$toast('校验失败，未绑定工卡');
+												self.errorMsg1 = '未绑定工卡';
+												return
+											}
+											self.$toast('校验成功');
+											self.qty = res.data.qty;
+											self.cardID = res.data.cardID;
+											self.selectedBin = res.data.bincode;
+											self.binName = res.data.binname;
+											self.onFocus(type);
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.$toast('服务器错误');
+									}
+								})
+							}
+							break;
+
+						default:
+							break;
+					}
+				},
+
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						// self.$refs.filed2.blur();
+					}
+				},
+
+				//删除
+				onDelete: function (index) {
+					var self = this;
+					self.labels.splice(index, 1)
+				},
+
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.Barcode = codedata.Barcode;
+					if (this.menuType == 1) { //仓位
+
+					} else if (this.menuType == 2) {//物料
+
+					}
+				},
+				onClose: function (action, done) {
+					if (action === "confirm") {
+						return done(false);
+					} else {
+						return done();
+						this.showScan = false
+					}
+				},
+
+			}
+		})
+	</script>
+</body>
+
+</html>

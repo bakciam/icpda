@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>标签校验</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<!-- 添加下拉选择组件 -->
+				<div>
+					<van-field readonly clickable label="对比级别" :value="value" placeholder="请选择对比级别"
+						@click="showPicker = true" input-align="right" />
+
+				</div>
+
+
+				<div>
+					<van-field v-model="labelCode" :label="labelName" input-align="right" placeholder="请输入或扫描内部标签"
+						@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+						error-message-align="right"  @input="extractSN" />
+				</div>
+				<div>
+					<van-field v-model="customerLabelCode" :label="customerLabelName" input-align="right"
+						placeholder="请输入或扫描客户标签" @keyup.enter.native="onEnter(2)" ref="filed2" required
+						:error-message="errorMsg2" error-message-align="right"  @input="extractSN1" />
+				</div>
+
+				<!-- 展示解析出的SN内容 -->
+						<!-- <p >解析出的 SN: {{ serialNumber }}</p> -->
+				<!-- 已扫标签列表，两列布局 -->
+				<van-cell-group title="已扫标签列表" style="min-height: 500px;">
+					<div class="confirm_dellist">
+						<!-- 添加列标题 -->
+						<div style="display: flex; font-weight: bold; margin-bottom: 10px;">
+							<div style="flex: 1;">
+								<span>{{labelName}}</span>
+								<div class="list_has_del" v-for="(item, index) in labels" :key="index"
+									style="display: flex; align-items: center;">
+									<!-- 第一列显示内部标签 -->
+									<div style="flex: 1;">
+										<span>{{ index + 1 }}、{{ item }}</span>
+									</div>
+
+
+									<!-- 删除按钮 -->
+									<div class="list_has_del_r" style="margin-left: 10px;">
+										<span class="del_btn" @click="onDelete(index)">删除</span>
+									</div>
+								</div>
+							</div>
+							<!-- 竖线 -->
+							<div style="border-right: 1px solid #ccc; height: 550px; margin: 0 10px;"></div>
+							<div style="flex: 1;">
+								<span>{{customerLabelName}}</span>
+								<div class="list_has_del" v-for="(item, index) in customerLabels" :key="index"
+									style="display: flex; align-items: center;">
+									<!-- 第一列显示内部标签 -->
+									<div style="flex: 1;">
+										<span>{{ index + 1 }}、{{ item }}</span>
+									</div>
+
+									<!-- 删除按钮 -->
+									<div class="list_has_del_r" style="margin-left: 10px;">
+										<span class="del_btn" @click="onDelete1(index)">删除</span>
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+					</div>
+				</van-cell-group>
+
+
+			</div>
+
+			<div class="btm_btn">
+				<van-button :type="buttonType" block square @click="duibi">对比</van-button>
+				<van-row>
+					<van-popup v-model="showPicker" round position="bottom">
+						<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirm" />
+					</van-popup>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">确认</van-button>
+					</van-col>
+				</van-row>
+			</div>
+
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					buttonType: 'warning',
+					showScan: false,
+					Barcode: '',
+					title: '标签对比',
+					labels: [], // 已扫临时标签
+					customerLabels: [], // 已扫客户标签
+					customerLabelCode: '', // 客户标签
+					labelCode: '', // 内部标签
+					errorMsg1: "",
+					errorMsg2: "",
+					dbvalue: '1',
+					value: '卷盘临标与卷盘客户标签核对',
+					showPicker: false,
+					customerLabelName: '卷盘客户标签',
+					labelName: '临时卷盘临标',
+					columns: ['卷盘临标与卷盘客户标签核对', '卷盘标签与铝箔袋标签核对', '铝箔袋标签与内盒标签核对', '内盒标签与外箱标签核对'],
+					dbFlag: false,
+					serialNumber: '' ,// 存储解析出的 SN
+					serialNumber1: '' // 存储解析出的 SN
+				},
+				methods: {
+					extractSN() {
+						if (typeof this.labelCode === 'string') { // 确保 inputText 是字符串
+							// 正则表达式匹配 'SN:' 后面的内容
+							const snMatch = this.labelCode.match(/SN:([^\s]+)/);
+							if (snMatch) {
+								this.serialNumber = snMatch[1]; // 提取并存储SN
+							}else {
+							this.serialNumber = this.labelCode; // 如果 inputText 不是字符串，则清空SN
+						}
+						} else {
+							this.serialNumber = ''; // 如果 inputText 不是字符串，则清空SN
+						}
+					},
+					extractSN1() {
+						if (typeof this.customerLabelCode === 'string') { // 确保 inputText 是字符串
+							// 正则表达式匹配 'SN:' 后面的内容
+							const snMatch = this.customerLabelCode.match(/SN:([^\s]+)/);
+							if (snMatch) {
+								this.serialNumber1 = snMatch[1]; // 提取并存储SN
+							}else{
+								this.serialNumber1 =  this.customerLabelCode; // 提取并存储SN
+							}
+						} else {
+							this.serialNumber1 = ''; // 如果 inputText 不是字符串，则清空SN
+						}
+					},
+					onConfirm(value) {
+						this.value = value;
+						if (value == '卷盘临标与卷盘客户标签核对') {
+							this.dbvalue = 1;
+							this.labelName = "临时卷盘临标",
+								this.customerLabelName = "卷盘客户标签"
+						} else if (value == '卷盘标签与铝箔袋标签核对') {
+							this.dbvalue = 2;
+							this.labelName = "卷盘标签",
+								this.customerLabelName = "铝箔袋标签"
+						} else if (value == '铝箔袋标签与内盒标签核对') {
+							this.dbvalue = 3;
+							this.labelName = "铝箔袋标签",
+								this.customerLabelName = "内盒标签"
+						} else {
+							this.dbvalue = 4;
+							this.labelName = "内盒标签",
+								this.customerLabelName = "外箱标签"
+						}
+						this.errorMsg1 = '';
+						// this.labels = [];
+						// this.customerLabels=[];
+						this.labels=[];
+						this.customerLabels=[];
+						this.buttonType = 'warning';
+						this.dbFlag = false;
+						this.showPicker = false;
+					},
+					// 返回上一步
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					duibi: function() {
+
+						var self = this;
+						console.log("对比级别" + self.dbvalue);
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认对比?',
+						}).then(function() {
+							if (self.dbvalue == '1' || self.dbvalue == '2') {
+								console.log("现在选择的是" + self.dbvalue);
+								// 判断两个数组是否一致
+								const result = self.arraysAreEqual(self.labels, self.customerLabels);
+								if (result) {
+									self.dbFlag = true;
+									self.buttonType = 'primary'
+									self.$toast("对比成功");
+								} else {
+									self.dbFlag = false;
+									self.buttonType = 'warning'
+									self.$toast("对比不成功");
+								}
+
+							} else if (self.dbvalue == '3' || self.dbvalue == '4') {
+								console.log("现在选择的是" + self.dbvalue);
+								var param = {
+									dbvalue: self.dbvalue,
+									labels: self.labels,
+									customerLabels: self.customerLabels,
+									checkUser: localStorage.userCode,
+									checkUserName: localStorage.userName
+								};
+								$.ajax({
+									url: serviceUrl + '/api/pda/labelCheck',
+									type: 'POST',
+									data: param,
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage
+											.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage
+											.secret);
+									},
+									success: function(res) {
+										if (res.code == 200) {
+											self.$dialog.alert({
+												title: '提示',
+												message: '对比成功!'
+											}).then(function() {
+												self.dbFlag = true;
+												self.buttonType = "primary"
+												self.errorMsg1 = '';
+												self.$refs.filed1.focus();
+											});
+										} else {
+											self.dbFlag = false;
+											self.buttonType = "warning"
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.dbFlag = false;
+										self.buttonType = "warning"
+										self.$toast('服务器错误！');
+									}
+								});
+
+							} else {
+								console.log("现在选择的是" + self.dbvalue);
+							}
+							console.log("dbFlag2:" + self.dbFlag);
+						}).catch(function() {
+							return;
+							// on cancel
+						});
+
+
+					},
+					// 处理保存逻辑
+					save: function() {
+
+
+						var self = this;
+						if (self.dbFlag == false) {
+							self.$toast("请先对比成功！");
+							console.log("继续");
+							return;
+						}
+
+						var param = {
+							dbvalue: self.dbvalue,
+							labels: self.labels,
+							customerLabels: self.customerLabels,
+							checkUser: localStorage.userCode,
+							checkUserName: localStorage.userName
+						};
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/labelCheckRecord',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											self.errorMsg1 = '';
+											self.labels = [];
+											self.customerLabels = [];
+											self.$refs.filed1.focus();
+										});
+										
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function() {
+									self.$toast('服务器错误！');
+								}
+							});
+						}).catch(function() {
+							// on cancel
+						});
+					},
+					// 处理重置逻辑
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+							self.customerLabelCode = '';
+							self.errorMsg1 = '';
+							self.labelCode = '';
+							self.customerLabelCode = '';
+							self.labels = [];
+							self.customerLabels = [];
+							self.$refs.filed1.focus();
+						}).catch(function() {
+							// on cancel
+						});
+					},
+					// 处理回车事件
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 1: // 内部标签
+								if (this.serialNumber) {
+									var isExist = false;
+									for (var index = 0; index < self.labels.length; index++) {
+										var element = self.labels[index];
+										if (element == self.serialNumber) {
+											isExist = true;
+											break;
+										}
+									}
+									if (!isExist) {
+										self.labels.push(self.serialNumber);
+									} else {
+										self.$toast('已扫描过相同标签');
+										self.$refs.filed1.focus();
+									}
+									self.labelCode = "";
+									self.serialNumber = "";
+									self.$refs.filed1.focus();
+
+								}
+								break;
+							case 2: // 客户标签
+								if (self.serialNumber1) {
+									var isExist = false;
+									for (var index = 0; index < self.customerLabels.length; index++) {
+										var element = self.customerLabels[index];
+										if (element == self.serialNumber1) {
+											isExist = true;
+											break;
+										}
+									}
+									if (!isExist) {
+										self.customerLabels.push(self.serialNumber1);
+									} else {
+										self.$toast('已扫描过相同标签');
+										self.$refs.filed2.focus();
+									}
+									self.customerLabelCode = "";
+									self.serialNumber1 = "";
+									self.$refs.filed2.focus();
+
+								}
+								break;
+							default:
+								break;
+						}
+					},
+					// 自动聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							self.$refs.filed1.focus();
+						}
+					},
+					// 删除标签
+					onDelete: function(index) {
+						var self = this;
+						self.labels.splice(index, 1);
+					},
+					// 删除标签
+					onDelete1: function(index) {
+						var self = this;
+						self.customerLabels.splice(index, 1);
+					},
+
+					arraysAreEqual: function(array1, array2) {
+						// 首先判断数组长度是否相等
+						if (array1.length !== array2.length) {
+							return false;
+						}
+
+						// 排序两个数组
+						const sortedArray1 = array1.slice().sort();
+						const sortedArray2 = array2.slice().sort();
+
+						// 比较排序后的数组
+						for (let i = 0; i < sortedArray1.length; i++) {
+							if (sortedArray1[i] !== sortedArray2[i]) {
+								return false;
+							}
+						}
+
+						return true;
+					}
+
+				}
+			});
+		</script>
+	</body>
+
+</html>

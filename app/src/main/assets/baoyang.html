@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>设备保养</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-field v-model="Device_Code" label="设备编码" input-align="right" placeholder="请输入或扫描设备编码"
+					@keyup.enter.native="onEnter()" autofocus ref="filed1" required :error-message="errorMsg1" error-message-align="right"/>
+			</div>
+			<div>
+				<van-cell title="任务编码" v-model="TaskCode" />
+			</div>
+			<div>
+				<van-field required v-model="ModifyUserName" autofocus ref="filed2" label="处理人" input-align="right"
+					placeholder="请输入" />
+			</div>
+			
+			<van-cell-group title="保养项目">
+				<div class="confirm_dellist">
+					<div class="list_has_del" v-for="(item,index) in Projects">
+						<div v-if="item.ProjectType=='01'">
+							<span>{{index+1}}、项目名称：{{item.Project_Name}}</span>
+							<div v-if="item.MinLine!=null">
+								<van-field required v-model="item.Remark" label="保养结果" input-align="right" type="number"
+									placeholder="请输入" @blur="validateInput($event,item)" />
+							</div>
+							<div v-else>
+								<van-field required v-model="item.Remark" label="保养结果" input-align="right"
+									placeholder="请输入" />
+							</div>
+						</div>
+						<div v-else>
+							<span>{{index+1}}、项目名称：{{item.Project_Name}}</span>
+							<van-field required label="保养结果" input-align="right">
+								<template #input>
+									<van-radio-group v-model="item.Radio" direction="horizontal">
+										<van-radio name="OK">OK</van-radio>
+										<van-radio name="NG">NG</van-radio>
+										
+									</van-radio-group>
+								</template>
+							</van-field>
+						</div>
+					</div>
+				</div>
+			</van-cell-group>
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">确认</van-button>
+				</van-col>
+			</van-row>
+		</div>
+
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showScan: false,
+				title: '设备保养',
+				Projects: [],//保养项目列表
+				Device_Code: '',//设备编码
+				TaskCode: '',//任务编码
+				ModifyUser: '',//处理人
+				ModifyUserName: '',//处理人
+				errorMsg1: "",
+				errorMsg2: "",
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+			},
+			created() {
+			},
+			methods: {
+				validateInput: function (e, item) {
+					var self = this;
+					if(item.Remark < item.MinLine || item.Remark > item.MaxLine){
+						self.$toast('请输入范围内的值');
+						item.Remark = '';
+						return;
+					}
+				},
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//出入库提交
+				save: function () {
+					var self = this;
+					var param = {
+						TaskCode: self.TaskCode,
+						Device_Code: self.Device_Code,
+						ModifyUser: self.ModifyUser,
+						ModifyUserName: self.ModifyUserName,
+						MaintainTaskDetail: self.Projects
+					}
+					if(self.ModifyUserName == undefined || self.ModifyUserName == "")
+					{
+						self.$toast('请输入处理人');
+						return;
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then(function () {
+						$.ajax({
+							url: serviceUrl + '/api/pda/saveMaintainEquipment',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.TaskCode = '';
+										self.Device_Code = '';
+										self.ModifyUserName = '';
+										self.Projects = [];
+										self.$refs.filed1.focus();
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('操作失败！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.Device_Code = '';
+						self.TaskCode = '';
+						self.errorMsg1 = '';
+						self.ModifyUserName = '';
+						self.Projects = [];
+						self.$refs.filed1.focus();
+					}).catch(function () {
+						// on cancel
+					});
+				},
+
+				//是否触发回车	
+				onEnter: function () {
+					var self = this;
+					if (this.Device_Code) {
+						self.Projects = []
+						$.ajax({
+							url: serviceUrl + '/api/pda/getMaintainEquipment',
+							type: 'GET',
+							data: {
+								Device_Code: self.Device_Code
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.errorMsg1 = ''
+									if (res.data) {
+										self.Device_Code = res.data.Device_Code;
+										self.TaskCode = res.data.TaskCode;
+										self.ModifyUser = localStorage.userCode;
+										self.ModifyUserName = localStorage.userName;
+										var list = res.data.Projects;
+										for (var i = 0; i < list.length; i++) {
+											const Project = list[i];
+											self.Projects.push(Project)
+										}
+									}
+									self.$toast('设备校验成功');
+									self.onFocus(1);
+								} else {
+									self.errorMsg1 = '找不到对应的设备'
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.errorMsg1 = '找不到对应的设备'
+								self.$toast('找不到对应的设备');
+							}
+						})
+					}
+				},
+
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						// self.$refs.filed2.blur();
+					}
+				},
+
+				onClose: function (action, done) {
+					if (action === "confirm") {
+						return done(false);
+					} else {
+						return done();
+						this.showScan = false
+					}
+				},
+			}
+		})
+	</script>
+</body>
+
+</html>

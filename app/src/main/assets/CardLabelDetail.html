@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>自动包装机标签绑定</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar  left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-field v-model="cardID" label="工卡卡号" input-align="right" placeholder="请输入或扫描工卡卡号"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="labelCode" label="内盒标签" input-align="right" placeholder="请输入或扫描内盒标签"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+			<van-cell-group title="已扫标签">
+				<div class="confirm_dellist">
+					<div class="list_has_del" v-for="(item,index) in labels">
+						<span>{{index+1}}、标签号：{{item.TempLabelCode}}</span>
+						<span>工卡号：{{item.Card_ID}}</span>
+						<span>数量：{{item.qty}}</span>
+						<span>绑定内盒标签号：{{item.Label_Code}}</span>
+					</div>
+				</div>
+				<!-- <van-empty image="search" description="未找到工卡" v-else /> -->
+			</van-cell-group>
+			<!-- <div>
+				<van-cell value="已扫临时标签" />
+			</div> -->
+		
+		</div>
+		<div class="btm_btn">
+				<van-col span="14">
+			<van-button type="info" block square @click="Bind">绑定</van-button>
+	</van-col>
+		<van-col span="10">
+				<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+		</van-col>
+		</div>
+		<van-empty image="search" description="未查询到有效工卡" v-if="!showDetail" />
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				active: '',
+				value: '内容',
+				showpopup: false,
+				activeNames: ['1'],
+				activeNames2: [],
+				result: [],
+				cardID: '',
+				errorMsg1: "",
+				errorMsg2: "",
+				labels: [],//已扫临时标签
+				labelCode: '',//标签
+				showDetail: true
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created: function () {
+				//var cardid = getQueryVariable('cardID');
+				//this.cardID = cardid ? cardid : '';
+				//this.getCardLabelDetail()
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.cardID='',
+						self.errorMsg1= "",
+						self.errorMsg2= "",
+						self.labels= [],//已扫临时标签
+						self.labelCode= '',//标签
+						self.showDetail= true
+					}).catch(function () {
+						// on cancel
+					});
+				},
+				
+				//获取工卡明细
+				getCardLabelDetail: function () {
+					var self = this;
+					$.ajax({
+						url: serviceUrl + '/api/pda/cardlabeldetail',
+						type: 'GET',
+						data: {
+							cardID: self.cardID
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.errorMsg1 = '';
+									self.labels = res.data;
+									self.cardID='';
+									self.onFocus(1);
+								//if (res.data) {
+							//		var list = res.data;
+							//		for (var i = 0; i < list.length; i++) {
+							//			const element = list[i];
+							//			self.labels.push(element)
+							//		}
+								//}
+								//self.onFocus(type);
+							}else {
+								self.$toast(res.msg);
+								self.showDetail = false
+							}
+						},
+						error: function () {
+							self.showDetail = false
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.value = codedata.Barcode;
+				},
+				//绑定
+				Bind: function () {
+					var self = this;
+					var codelist = []
+					if (self.labels) {
+						for (var index = 0; index < self.labels.length; index++) {
+							const element = self.labels[index];
+							codelist.push(element)
+						}
+					}
+	             var saveData = {					
+						param:JSON.stringify(codelist),
+						userID: localStorage.userCode,
+						userName: localStorage.userName
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认绑定?',
+					}).then(function () {
+						// on confirm
+						$.ajax({
+							url: serviceUrl + '/api/pda/cardbindqalabel',
+							type: 'POST',
+							data: saveData,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									})
+										.then(function () {
+											self.backLast();
+										})
+				
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				
+				},
+	               //是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //工卡卡号		
+                             self.getCardLabelDetail()
+							break;
+						case 2: //内盒标签		
+							self.getQALabelDetail()
+							break;
+						default:
+							break;
+					}
+				},
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						self.$refs.filed2.blur();
+					}
+				},
+			getQALabelDetail:function () {
+					var self = this;
+					var codelist = []
+					if (self.labels) {
+						for (var index = 0; index < self.labels.length; index++) {
+							const element = self.labels[index];
+							codelist.push(element)
+						}
+					}
+					var saveDate = {
+						param:JSON.stringify(codelist),
+						labelCode: self.labelCode
+					}
+
+					$.ajax({
+						url: serviceUrl + '/api/pda/cardqalabeldetail',
+						type: 'POST',
+						data: saveDate,
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.errorMsg1 = '';
+									self.labels = res.data;
+									self.labelCode='';
+								//if (res.data) {
+							//		var list = res.data;
+							//		for (var i = 0; i < list.length; i++) {
+							//			const element = list[i];
+							//			self.labels.push(element)
+							//		}
+								//}
+								//self.onFocus(type);
+							}else {
+								self.$toast(res.msg);
+								self.showDetail = false
+							}
+						},
+						error: function () {
+							self.showDetail = false
+							self.$toast('服务器错误');
+						}
+					})
+				
+				},
+				onChange() {
+
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

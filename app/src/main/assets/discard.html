@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>废弃</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+		<style>
+			.collspan_list{background: #fff;padding: 0 15px;}
+		</style>
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar title="废弃" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div class="redtips">请扫描要废弃的工卡</div>
+			<div class="collspan_list">		
+			<div class="list_has_del">
+						  	<span>1、工卡：W20230039-4</span>
+						  	<div class="list_has_del_r">
+						  		<span class="del_btn">删除</span>
+						  	</div>
+						  </div>
+						  <div class="list_has_del">
+						  	<span>2、工卡：W20230039-4</span>
+						  	<div class="list_has_del_r">
+						  		<span class="del_btn">删除</span>
+						  	</div>
+						  </div>
+						   </div>
+			<div class="btm_btn">
+				<van-button type="info" block square>确认废弃</van-button>
+			</div>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					value: '',
+					showpopup:false,
+					activeNames: ['1'],
+					activeNames2: [],
+					activeNames3: [],
+					activeNames4: [],
+					selectedCode:[]
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					window.scanCode = this.scanCode;
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					scanCode: function(data) { //监听扫码事件
+						var codedata = JSON.parse(data);
+						this.value = codedata.Barcode;
+					},
+				}
+			})
+		</script>
+	</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>盘点</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar title="盘点" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div><van-cell title="设备编码" v-model="value" /></div>
+			<div class="collspan_list">
+				<van-collapse v-model="activeNames">
+					<van-collapse-item name="1">
+						<div slot="title">仓库
+							<div class="buton_list">
+								<van-button type="info" size="small" @click.stop="showpopup=true">选择</van-button>
+							</div>
+						</div>
+					</van-collapse-item>
+					<van-collapse-item name="2">
+						<div slot="title">仓位信息
+							<div class="buton_list">
+								<van-button type="info" size="small">扫描</van-button>
+							</div>
+						</div>
+					</van-collapse-item>	
+					<van-collapse-item name="3">
+						<div slot="title">物料信息
+							<div class="buton_list">
+								<van-button type="info" size="small"  @click.stop="showWuliao=true">扫描</van-button>
+							</div>
+						</div>
+					</van-collapse-item>	
+				</van-collapse>
+			</div>
+			<div class="btm_btn">
+				<van-button type="info" block square>确认盘点</van-button>
+			</div>
+			<van-popup
+			  v-model="showpopup"
+			  position="right"
+			  :style="{ width: '80%',height:'100%' }"
+			>
+			<div class="popup_list">
+				<div class="popub_title">仓库选择</div>
+				<div class="pop_list">
+				<van-checkbox-group v-model="selectedCode">
+					<van-checkbox name="1">
+						<div class="row_line">WB-1#<span class="fontright">XRDEF</span></div>
+					</van-checkbox>
+					<van-checkbox name="2">
+						<div class="row_line">WB-1#<span class="fontright">XRDEF</span></div>
+					</van-checkbox>
+					<van-checkbox name="3">
+						<div class="row_line">WB-1#<span class="fontright">XRDEF</span></div>
+					</van-checkbox>
+				</van-checkbox-group>
+				</div>
+			</div>
+			<van-row class="popup_fixed_btn">
+				<van-col span="10">
+					<van-button
+					 color="#ccc"
+					 square
+					 block @click="showpopup=false"
+					>取消
+					</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button
+					 type="info"
+					 square
+					 block @click="showpopup=false"
+					>确认选择
+					</van-button>
+				</van-col>
+			</van-row>
+			</van-popup>
+			<div>
+				<van-dialog
+				  title="物料信息"
+				  v-model="showWuliao"
+				  show-cancel-button
+				  @confirm="onConfirm"
+				>
+				 <div class="redtips">请扫描要盘点的物料</div>
+				 <div class="confirm_dellist">
+				  <div class="list_has_del">
+				  	<span>1、物料：W20230039-4</span>
+				  	<div class="list_has_del_r">
+				  		<span class="del_btn">删除</span>
+				  	</div>
+				  </div>
+				  <div class="list_has_del">
+				  	<span>2、物料：W20230039-4</span>
+				  	<div class="list_has_del_r">
+				  		<span class="del_btn">删除</span>
+				  	</div>
+				  </div>
+				  </div>
+				</van-dialog>	
+			</div>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					value: '',
+					showpopup:false,
+					activeNames: [],
+					selectedCode:[],
+					showWuliao:false
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					window.scanCode = this.scanCode;
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					scanCode: function(data) { //监听扫码事件
+						var codedata = JSON.parse(data);
+						this.value = codedata.Barcode;
+					},
+					onConfirm: function() {
+					
+					},
+				}
+			})
+		</script>
+	</body>
+</html>

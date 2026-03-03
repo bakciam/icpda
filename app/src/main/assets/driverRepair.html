@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC巡查</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head><!--  -->
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+
+			</div>
+			<div>
+				<!-- Vant Overlay 遮罩层，v-if 绑定 loading 状态 -->
+				<van-overlay v-if="loading" :show="loading" z-index="2000">
+					<div class="loading-container">
+						<!-- 加载动画 -->
+						<van-loading size="24px" type="spinner" color="white" />
+						<!-- 显示加载文字 -->
+						<span class="loading-text">数据加载中...</span>
+					</div>
+				</van-overlay>
+				<div>
+					<van-field v-model="DriverInfo" label="测试板号" input-align="right" placeholder="请输入或扫描内部标签"
+						@keyup.enter.native="onEnter(1)" ref="filed1" required :error-message="errorMsg1"
+						error-message-align="right" />
+				</div>
+				<div v-if="type==1">
+					<div>
+						<van-field v-model="ProductionOrder" label="工单号" input-align="right" placeholder="请输入或扫描工单号"
+							ref="filed2" required :error-message="errorMsg2" error-message-align="right" />
+					</div>
+					<div>
+						<van-field v-model="TestBoardStation" label="测试板工位" input-align="right" placeholder="请输入或扫描" />
+					</div>
+
+					<div>
+						<van-field v-model="Reporter" :label="ReporterLabel" input-align="right" placeholder="请输入" />
+					</div>
+
+					<div>
+						<van-field v-model="FaultDescription" label="故障描述" input-align="right" placeholder="请输入" />
+					</div>
+
+					<div>
+						<van-field v-model="Remarks" label="备注" input-align="right" placeholder="请输入" />
+					</div>
+				</div>
+				<div v-else>
+					<div>
+						<van-field v-model="collectionUser" label="领用人" input-align="right" placeholder="请输入或扫描" />
+					</div>
+					<div>
+						<van-field v-model="Reporter" :label="ReporterLabel" input-align="right" placeholder="请输入或扫描" />
+					</div>
+					<div>
+						<van-field v-model="Remarks" label="备注" input-align="right" placeholder="请输入" />
+					</div>
+				</div>
+
+				<!-- 维修 -->
+				<!-- <div>
+					<van-field v-model="FaultLocation" label="故障位置" input-align="right" placeholder="请输入或扫描工单号" disabled />
+				</div>
+				
+				<div>
+					<van-field v-model="PartSpecification" label="配件规格" input-align="right" placeholder="请输入或扫描工单号" disabled />
+				</div>
+				
+				<div>
+					<van-field v-model="Repairer" label="维修人" input-align="right" placeholder="请输入或扫描工单号" disabled />
+				</div>
+				
+				<div>
+					<van-field v-model="RepairRecord" label="维修记录" input-align="right" placeholder="请输入或扫描工单号" :disabled="false" />
+				</div> -->
+				<!-- 已扫标签列表，两列布局 -->
+
+
+				<div class="btm_btn">
+
+					<van-row>
+
+
+						<van-button type="info" block square @click="save">{{buttonName}}</van-button>
+
+				</div>
+
+			</div>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					title: '测试板报修',
+					buttonType: 'warning',
+					labels: [], // 已扫临时标签
+
+					customerLabelCode: '', // 客户标签
+					labelCode: '', // 内部标签
+					errorMsg1: "",
+					errorMsg2: "",
+					labelCode: '', // van-field 的输入内容
+					driverCode: '',
+					driverNo: '',
+					equCode: '',
+					loading: false,
+					RepairRecord: '',
+					Repairer: "",
+					PartSpecification: "",
+					FaultLocation: '',
+					Remarks: '',
+					FaultDescription: '',
+					Reporter: '',
+					ReporterCode: '',
+					ProductionOrder: '',
+					TestBoardStation: '',
+					DriverInfo: '',
+					buttonName: '报修',
+					ReporterLabel: '报修人',
+					type: "",
+					collectionUser: '',
+
+
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+
+					this.ReporterCode = localStorage.userCode;
+					this.Reporter = localStorage.userName;
+
+				},
+				created() {
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型
+					this.type = type ? type : '2';
+
+					if (this.type == 1) {
+						this.title = '测试板报修'
+
+
+					} else if (this.type == 2) {
+						this.title = '测试板下机入库'
+						this.buttonName = "下机入库"
+						this.ReporterLabel = "登记人"
+					}
+
+				},
+				methods: {
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					// 处理保存逻辑
+					save: function() {
+
+
+						var self = this;
+
+						//M449137-02
+						// JD000261-0001
+						var param = {
+							type: self.type,
+							DriverCode: self.driverCode,
+							DriverNo: self.driverNo,
+							TestBoardStation: self.TestBoardStation,
+							ProductionOrder: self.ProductionOrder,
+							FaultDescription: self.FaultDescription,
+							Remarks: self.Remarks,
+							Reporter: localStorage.userCode,
+							ReporterName: self.Reporter,
+							collectionUser: self.collectionUser,
+						};
+						console.log(param);
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/postDriverRepair',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											self.errorMsg1 = '';
+											self.DriverInfo = ''
+											self.driverCode = ''
+											self.driverNo = ''
+											self.TestBoardStation = ''
+											self.ProductionOrder = ''
+											self.FaultDescription = ''
+											self.Remarks = ''
+											self.Reporter = ''
+											self.collectionUser = ''
+
+											self.$refs.filed1.focus();
+										});
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function() {
+									self.$toast('服务器错误！');
+								}
+							});
+						}).catch(function() {
+							// on cancel
+						});
+					},
+					// 处理重置逻辑
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+							self.buttonType = 'warning',
+								self.errorMsg1 = '';
+							self.labelCode = '';
+							self.customerLabelCode = '';
+							self.labels = [];
+							self.equCode = '';
+							self.$refs.filed2.focus();
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					// 处理回车事件
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 1: // 内部标签
+								if (self.DriverInfo) {
+
+
+									var param = {
+
+										DriverInfo: self.DriverInfo,
+									};
+									$.ajax({
+										url: serviceUrl + '/api/pda/exboardAddRecord',
+										type: 'GET',
+										data: param,
+										contentType: "application/x-www-form-urlencoded",
+										dataType: 'json',
+										beforeSend: function(XMLHttpRequest) {
+											XMLHttpRequest.setRequestHeader("token", localStorage
+												.token);
+											XMLHttpRequest.setRequestHeader("secret", localStorage
+												.secret);
+										},
+										success: function(res) {
+											if (res.code == 200) {
+												self.driverCode = res.data.DriverCode
+												self.driverNo = res.data.DriverNo
+												// self.$refs.filed2.focus();
+												self.errorMsg1 = '';
+
+											} else {
+												self.$toast(res.msg);
+											}
+										},
+										error: function() {
+											self.$toast('服务器错误！');
+										}
+									});
+
+
+
+
+								}
+								break;
+							case 2: // 客户标签
+								if (self.customerLabelCode) {
+									self.loading = true;
+									var param = {
+
+										CardId: self.customerLabelCode,
+									};
+									$.ajax({
+										url: serviceUrl + '/api/pda/exboardForCard',
+										type: 'GET',
+										data: param,
+										contentType: "application/x-www-form-urlencoded",
+										dataType: 'json',
+										beforeSend: function(XMLHttpRequest) {
+											XMLHttpRequest.setRequestHeader("token", localStorage.token);
+											XMLHttpRequest.setRequestHeader("secret", localStorage
+												.secret);
+										},
+										success: function(res) {
+											if (res.code == 200) {
+												// self.$toast('200');
+												self.testBoard = res.data.TestBoard
+												self.equCode = res.data.EquipmentCode
+												self.errorMsg1 = '';
+												self.$refs.filed1.focus();
+											} else {
+												self.$toast(res.msg);
+											}
+											self.loading = false;
+										},
+										error: function() {
+											self.$toast('服务器错误！');
+											self.loading = false;
+											self.loading = false;
+										}
+									});
+
+									self.$refs.filed1.focus();
+								}
+								break;
+							default:
+								break;
+						}
+					},
+					// 自动聚焦
+					onFocus: function() {
+						var self = this;
+						self.$refs.filed1.focus();
+
+					},
+					// 删除标签
+					onDelete: function(index) {
+						var self = this;
+						self.labels.splice(index, 1);
+						if (self.labels.length == 0) {
+							self.buttonType = 'warning'
+						}
+					},
+
+
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.loading-container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				height: 100vh;
+				/* 全屏高度，确保遮罩层中的内容垂直居中 */
+				color: white;
+				/* 设置文字颜色为白色 */
+			}
+
+			.loading-text {
+				margin-top: 10px;
+				font-size: 16px;
+				color: white;
+				/* 确保加载文字的颜色为白色 */
+			}
+
+			.collapse-item-content {
+				display: flex;
+				justify-content: space-between;
+
+			}
+
+			.left-column {
+				flex: 1;
+				text-align: left;
+			}
+
+			.right-column {
+				flex: 1;
+				text-align: right;
+			}
+		</style>
+	</body>
+
+</html>

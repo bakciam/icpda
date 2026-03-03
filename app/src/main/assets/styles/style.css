@@ -1,0 +1,65 @@
+html{padding: 0; margin: 0;}
+body{font-size: 16px;background: #f5f5f5; padding: 50px 0;}
+.btn_set{text-align:right;margin: 0 20px 0 0;}
+.btn_set .van-button--info{background:#3f61a8;border: 1px solid #3f61a8;}
+.loginbg{background:#4b8de4 url(../images/login_bg.jpg) no-repeat left top;}
+.logo{margin:70px auto 0;text-align: center;}
+.logo img{ width:50%;}
+.login_con{width: 80%;margin:50px auto 0;}
+.login_con .van-cell{background: rgba(255,255,255,.2);    border-radius: 5px;    line-height: 36px;font-size: 14px;margin:0 0 15px;}
+.login_con .van-field__control{color:#fff;font-size: 16px;}
+.login_con .van-hairline--top-bottom::after{border-width: 0;}
+.login_con .van-button{width:100%;background: none;border-radius: 5px;border:#fff solid 1px;color: #fff;margin:20px 0 0;font-size: 18px;height: 54px;}
+.footer{color: #fff;line-height:50px;width: 100%;text-align: center;padding: 20px 0 0;}
+
+.header_tip{background:#2d79dd;color: #fff; line-height: 2em;padding: 5px 8px;}
+.header_tip span{float: right;color: #fff;text-decoration: underline;}
+
+.main_menu{}
+.main_menu ul{list-style: none;padding:15px 10px 5px; overflow: hidden; background: #eee;border-bottom: #ccc dotted :;px;}
+.main_menu ul li{width:33.33%;float: left;text-align: center;margin: 0 0 15px;}
+.main_menu ul li img{width: 90%;}
+
+.collspan_list{margin: 10px 0 0;}
+.buton_list{padding: 0 10px 0 0;
+    text-align: right;
+    float: right;}
+.buton_list .van-button{margin:0 10px 0 0;}
+
+.van-nav-bar{position: fixed!important;top: 0; width: 100%;z-index: 20004!important;}
+.popup_fixed_btn{width: 100%;}
+.popup_list{padding:60px 10px 0}
+.popub_title{border-bottom: #ccc solid 1px; padding: 0 0 8px;margin-bottom: 10px;}
+.row_line{overflow: hidden;}
+.fontright{float: right;}
+.van-checkbox{padding: 8px 0;}
+.popup_list .van-checkbox__label{width: 100%;}
+
+.list_has_del{ overflow: hidden;line-height: 30px;border-bottom: #eee solid 1px; padding: 5px 0;font-size: 14px;}
+.list_has_del_r{float:right;}
+.del_btn{background: #f00;color: #fff;display: block;float: right;padding: 0 15px;height: 30px;line-height: 30px;margin: 0 0 0 10px;}
+
+.btm_btn{padding: 25px 0 0; position: fixed;bottom: 0; width: 100%;}
+
+.normal_list{overflow: hidden;padding: 5px 0 0;color: #323233;}
+.align_right{float: right;}
+.normal_item{border-bottom: #eee solid 1px; padding: 10px 0;}
+.tab_con{padding: 20px;background: #fff;}
+.redtips{color: #f00; padding: 3px 10px;}
+.confirm_dellist{width: 90%;margin: 0 auto;}
+
+.custom-rigth-icon {
+    margin-right: 4px;
+    vertical-align: middle;
+    color: #1989fa;
+  }
+.success-icon {
+    font-size: 16px;
+    line-height: inherit;
+  }
+.pop_list{ height: calc(100vh - 145px);
+overflow-y: auto;}
+.version{color:#fff;position:absolute;right: 10px;bottom: 10px;}
+[v-cloak]{
+    display: none;
+}

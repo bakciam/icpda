@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC巡查</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head><!--  -->
+
+	<body>
+		<div id="app">
+			<div>
+				<van-cell :value="ps" />
+			</div>
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div class='no'>
+				<van-field v-model="time" label="日期时间" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required error-message-align="right" />
+			</div>
+			<div id='no'>
+				<van-field v-model="locationCode" label="设备编号" input-align="right" placeholder="请输入或扫描设备" autofocus
+					ref="filed0" required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div>
+				<van-field v-model="materialContent" label="工卡号" input-align="right" placeholder="请输入或扫描工卡号"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					error-message-align="right" />
+			</div>
+			<div class='no' id='package' style="display: flex; justify-content: space-between;">
+				<van-field v-model="package" label="封装形式" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" disabled />
+			</div>
+			<div class='no'>
+				<van-field v-model="pModel" label="产品型号" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" disabled />
+			</div>
+			<div v-if="type==1" class='no'>
+				<van-field disabled v-model="f1Model" :label="f1Label" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div v-if="type==2">
+				<van-field v-model="f1Model" label="线径:" input-align="right" placeholder="请选择型号">
+					<template #input>
+						<van-dropdown-menu>
+							<van-dropdown-item v-model="f1Model" :options="wireList" />
+						</van-dropdown-menu>
+					</template>
+				</van-field>
+			</div>
+			<!-- <div class='no' id="dieModelId">
+				<van-field v-model="dieModel" label="芯片型号" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div> -->
+			<div id="dieModelId">
+				<van-field v-model="dieModel" label="芯片型号" input-align="right" placeholder="请选择芯片型号">
+					<template #input>
+						<van-dropdown-menu>
+							<van-dropdown-item v-model="dieModel" :options="options" @change="onSelect" />
+						</van-dropdown-menu>
+					</template>
+				</van-field>
+			</div>
+			<div id="fModel" class='no'>
+				<van-field disabled v-model="f2Model" :label="f2Label" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+
+			</div>
+
+			<div id="DB" v-if="type==1">
+
+
+				<div id='no'>
+					<van-field v-model="vacuum" label="真空" input-align="right" placeholder="请输入"
+						@keyup.enter.native="onEnter(1)" type="number" autofocus ref="filed0" required
+						:error-message="errorMsg2" error-message-align="right"
+						:style="{ backgroundColor: isVacuumOutOfRange ? 'red' : 'white' }" />
+				</div>
+				<div id='no'>
+					<van-field v-model="pressure" label="气压" input-align="right" placeholder="请输入"
+						@keyup.enter.native="onEnter(0)" type="number" autofocus ref="filed1" required
+						:error-message="errorMsg1" error-message-align="right"
+						:style="{ backgroundColor: isPressureOutOfRange ? 'red' : 'white' }" />
+				</div>
+				<div class='no'>
+					<van-field v-model="dingzhen" label="顶针规格" input-align="right" placeholder="请输入"
+						@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+						error-message-align="right" disabled />
+				</div>
+				<van-row class="flex-container">
+					<van-col span="5" class="flex-label-col">
+						<span class="field-label">顶针：</span>
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field type="number" v-model="pinNumber" label="顶针数量" placeholder="输入..." />
+						</van-row>
+						<van-row>
+							<van-field type="number" :style="{ backgroundColor: isPinHeightOfRange ? 'red' : 'white' }"
+								v-model="pinHeight" label="顶针高度" placeholder="输入..." />
+						</van-row>
+
+					</van-col>
+				</van-row>
+
+				<div class='no custom-van-field'>
+					<span class="field-label">检测功能：</span>
+					<van-radio-group v-model="detectionFunction" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">墨点：</span>
+					<van-radio-group v-model="dots" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">MAP：</span>
+					<van-radio-group v-model="map" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">盲封：</span>
+					<van-radio-group v-model="sealing" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">5S：</span>
+					<van-radio-group v-model="s5" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+
+
+
+			</div>
+			<div id="WB" v-if="type==2">
+
+				<div class='no custom-van-field'>
+					<span class="field-label">线材批号：</span>
+					<van-radio-group v-model="f2Model" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">线材有效期：</span>
+					<van-radio-group v-model="wireExpirationDate" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<!-- <div class='no'>
+					<van-field disabled v-model="piDao" label="劈刀型号" input-align="right" placeholder="请输入"
+						@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+						error-message-align="right" />
+				</div> -->
+				<div id="dieModelId">
+					<van-field v-model="bondMode" label="焊线模式" input-align="right" placeholder="请选择型号">
+						<template #input>
+							<van-dropdown-menu>
+								<van-dropdown-item v-model="bondMode" :options="bondModeList" />
+							</van-dropdown-menu>
+						</template>
+					</van-field>
+					<van-field v-model="piDao" label="劈刀型号" input-align="right" placeholder="请选择型号">
+						<template #input>
+							<van-dropdown-menu>
+								<van-dropdown-item v-model="piDao" :options="options" @change="onSelect1" />
+							</van-dropdown-menu>
+						</template>
+					</van-field>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">劈刀有效期：</span>
+					<van-radio-group v-model="piDaoExpirationDate" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">图纸正确：</span>
+					<van-radio-group v-model="drawingCorrect" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">外观合格：</span>
+					<van-radio-group v-model="appearancQeualified" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+				<div class='no custom-van-field'>
+					<span class="field-label">程序正确：</span>
+					<van-radio-group v-model="procedureCorrect" direction="horizontal">
+						<van-radio name="OK">OK</van-radio>
+						<van-radio name="NG">NG</van-radio>
+					</van-radio-group>
+				</div>
+
+				<van-row class="flex-container">
+					<van-col span="5" class="flex-label-col">
+						<span class="field-label">{{ res_Cap[0].ProjectContent }}:</span>
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field input-align="right" type="number" v-model="power1" label="功率" placeholder="输入..."
+								:style="{ backgroundColor: isPower1OutOfRange ? 'red' : 'white' }" />
+						</van-row>
+						<van-row>
+							<van-field input-align="right" type="number" v-model="force1" label="压力" placeholder="输入..."
+								:style="{ backgroundColor: isForce1OutOfRange ? 'red' : 'white' }" />
+						</van-row>
+					</van-col>
+				</van-row>
+				<van-row class="flex-container">
+					<van-col span="5" class="flex-label-col">
+						<span class="field-label">{{res_Cap[1].ProjectContent}}：</span>
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field input-align="right" type="number" v-model="power2" label="功率" placeholder="输入..."
+								:style="{ backgroundColor: isPower2OutOfRange ? 'red' : 'white' }" />
+						</van-row>
+						<van-row>
+							<van-field input-align="right" type="number" v-model="force2" label="压力" placeholder="输入..."
+								:style="{ backgroundColor: isForce2OutOfRange ? 'red' : 'white' }" />
+						</van-row>
+					</van-col>
+				</van-row>
+				<van-row class="flex-container">
+					<van-col span="5" class="flex-label-col">
+						<span class="field-label">{{ res_Cap[2].ProjectContent }}：</span>
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field input-align="right" type="number" v-model="power3" label="功率" placeholder="输入..."
+								:style="{ backgroundColor: isPower3OutOfRange ? 'red' : 'white' }" />
+						</van-row>
+						<van-row>
+							<van-field input-align="right" type="number" v-model="force3" label="压力" placeholder="输入..."
+								:style="{ backgroundColor: isForce3OutOfRange ? 'red' : 'white' }" />
+						</van-row>
+					</van-col>
+				</van-row>
+
+				<van-row class="flex-container">
+					<van-col span="5" class="flex-label-col">
+						<span class="field-label">轨道温度：</span>
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field input-align="right" v-model="preBond" label="preBond温度" placeholder="输入..."
+								:style="getStyle(preBond, 195, 205)" />
+						</van-row>
+						<van-row>
+							<van-field input-align="right" v-model="bond" label="bond温度" placeholder="输入..."
+								:style="getStyle(bond, 205, 215)" />
+						</van-row>
+						<van-row>
+							<van-field input-align="right" v-model="postBond" label="postBond温度" placeholder="输入..."
+								:style="getStyle(postBond, 95, 105)" />
+						</van-row>
+					</van-col>
+				</van-row>
+
+				<van-row class="flex-container">
+					<van-col span="5" class="flex-label-col">
+						<span class="field-label">N2H2气体流量设定：</span>
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field v-model="ballProtectFlow" :label="res_wireFlowData[0].FlowType"
+								input-align="right" placeholder="请输入" type="number"
+								:style="{ backgroundColor: isBallProtectFlowOutOfRange ? 'red' : 'white' }" />
+						</van-row>
+						<van-row>
+							<van-field v-model="lighterFlow" :label="res_wireFlowData[1].FlowType" input-align="right"
+								placeholder="请输入" type="number"
+								:style="{ backgroundColor: isLighterFlowOutOfRange ? 'red' : 'white' }" />
+						</van-row>
+						<van-row>
+							<van-field v-model="surfaceFlow" :label="res_wireFlowData[2].FlowType" input-align="right"
+								placeholder="请输入" type="number"
+								:style="{ backgroundColor: isSurfaceFlowOutOfRange ? 'red' : 'white' }" />
+						</van-row>
+					</van-col>
+				</van-row>
+
+			</div>
+
+
+
+			<div class='no'>
+				<van-field v-model="qc" label="品质人员" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">综合判定：</span>
+				<van-radio-group v-model="judgment" direction="horizontal">
+					<van-radio name="OK">OK</van-radio>
+					<van-radio name="NG">NG</van-radio>
+				</van-radio-group>
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">物料扣押：</span>
+				<van-checkbox-group v-model="wuliaokouya" direction="horizontal" :disabled="judgment !== 'NG'">
+					<van-checkbox name="NG">NG</van-checkbox>
+				</van-checkbox-group>
+			</div>
+			<div class='no custom-van-field'>
+				<span class="field-label">设备扣押：</span>
+				<van-checkbox-group v-model="shebeikouya" direction="horizontal" :disabled="judgment !== 'NG'">
+					<van-checkbox name="NG">NG</van-checkbox>
+				</van-checkbox-group>
+			</div>
+			<div class='no'>
+				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+			<van-tag type="success" size="large">{{tag}}</van-tag>
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block :disabled="isSubmitting" square
+							@click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup"
+					value-key="storeName" />
+			</van-popup>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					isSubmitting: false, // Control for preventing multiple clicks
+					type: '', //物料类型
+					showScan: false,
+					btnName: '确认',
+					columns: [],
+					errorMsg1: "",
+					errorMsg2: "",
+					showPicker: false,
+
+					locationCode: '2', //货架
+					materialContent: '1', //条码内容
+
+
+
+					f2Label: '',
+					f1Label: '',
+					selectedDieModel: '',
+					pModel: "",
+					time: "",
+					package: '',
+					dieModel: '',
+					f2Model: '',
+					f1Model: '',
+					vacuum: '',
+					pressure: '',
+					pinHeight: '',
+					pinNumber: '',
+					detectionFunction: '',
+					dots: '',
+					map: '',
+					sealing: '',
+					s5: '',
+					judgment: '',
+					drawingCorrect: '',
+					appearancQeualified: '',
+					procedureCorrect: '',
+					wireExpirationDate: '',
+					power1: '',
+					force1: '',
+					power2: '',
+					force2: '',
+					power3: '',
+					force3: '',
+					preBond: '',
+					bond: '',
+					postBond: '',
+					ballProtectFlow: '',
+					lighterFlow: '',
+					surfaceFlow: '',
+					qc: '',
+					qcCode: '',
+					remark: '',
+					dingzhen: '',
+					shebeikouya: [],
+					wuliaokouya: [],
+					pressureRight: '',
+					pressureLeft: '',
+					piDaoExpirationDate: '',
+					piDao: '',
+					VacuumMin: -100,
+					VacuumMax: -60,
+					PinHeightStandardValue: 0,
+					res_Cap: [{
+
+
+							"ProjectContent": "Seg-1",
+							"Power1": 0,
+							"Power2": 250,
+							"Force1": 0,
+							"Force2": 250,
+							"Power": "USG Current/功率",
+							"Force": "Force/压力"
+						},
+						{
+							"Remark": "1st-Die",
+							"ProjectContent": "Seg-2",
+							"Power1": 0,
+							"Power2": 250,
+							"Force1": 0,
+							"Force2": 250,
+							"Power": "USG Current/功率",
+							"Force": "Force/压力"
+						},
+						{
+							"ProjectContent": "Seg-3",
+							"Power1": 0,
+							"Power2": 250,
+							"Force1": 0,
+							"Force2": 250,
+							"Power": "USG Current/功率",
+							"Force": "Force/压力"
+						},
+						{
+							"ProjectContent": "Seg-4",
+							"Power1": 0,
+							"Power2": 250,
+							"Force1": 0,
+							"Force2": 250,
+							"Power": "USG Current/功率",
+							"Force": "Force/压力"
+						}
+					],
+					res_wireFlowData: [{
+
+							"FlowType": "铜球保护流量",
+							"FlowRateLeftBoundary": 0.20,
+							"FlowRateRightBoundary": 0.70
+						},
+						{
+
+							"FlowType": "清洁打火杆流量",
+							"FlowRateLeftBoundary": 0.20,
+							"FlowRateRightBoundary": 0.70
+						},
+						{
+
+							"FlowType": "芯片表面流量",
+							"FlowRateLeftBoundary": 0.20,
+							"FlowRateRightBoundary": 0.70
+						}
+					],
+					options: [{
+							text: '型号1',
+							value: 'model1',
+							pinNumber: 1
+						},
+						{
+							text: '型号2',
+							value: 'model2',
+							pinNumber: 1
+						}
+					],
+					wireList: [{
+							text: '线径1',
+							value: 'model1',
+
+						},
+						{
+							text: '线径2',
+							value: 'model2',
+
+						}
+					],
+					bondMode: '',
+					bondModeList: [{
+							text: '/',
+							value: '/',
+
+						},
+						{
+							text: 'Pro~Bond',
+							value: 'Pro~Bond',
+
+						},
+						{
+							text: 'Pro~Stitch',
+							value: 'Pro~Stitch',
+
+						},
+						{
+							text: 'Quick~Bond',
+							value: 'Quick~Bond',
+
+						},
+						{
+							text: 'Quick~Stitch',
+							value: 'Quick~Stitch',
+
+						}
+					],
+					tag: '',
+					ps: ''
+				},
+				computed: {
+
+					isPressureOutOfRange() {
+						return this.pressure !== '' && (parseFloat(this.pressure) < this.pressureLeft || parseFloat(this
+							.pressure) > this.pressureRight);
+					},
+					isVacuumOutOfRange() {
+						return this.vacuum !== '' && (parseFloat(this.vacuum) < this.VacuumMin || parseFloat(
+							this.vacuum) > this.VacuumMax);
+					},
+					isBallProtectFlowOutOfRange() {
+						const flow = parseFloat(this.ballProtectFlow);
+						const leftBoundary = this.res_wireFlowData[0].FlowRateLeftBoundary;
+						const rightBoundary = this.res_wireFlowData[0].FlowRateRightBoundary;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(flow) && (flow < leftBoundary || flow > rightBoundary);
+					},
+					isLighterFlowOutOfRange() {
+						const flow = parseFloat(this.lighterFlow);
+						const leftBoundary = this.res_wireFlowData[1].FlowRateLeftBoundary;
+						const rightBoundary = this.res_wireFlowData[1].FlowRateRightBoundary;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(flow) && (flow < leftBoundary || flow > rightBoundary);
+					},
+					isSurfaceFlowOutOfRange() {
+						const flow = parseFloat(this.surfaceFlow);
+						const leftBoundary = this.res_wireFlowData[2].FlowRateLeftBoundary;
+						const rightBoundary = this.res_wireFlowData[2].FlowRateRightBoundary;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(flow) && (flow < leftBoundary || flow > rightBoundary);
+					},
+					isPower1OutOfRange() {
+						const power = parseFloat(this.power1);
+						const leftBoundary = this.res_Cap[0].Power1;
+						const rightBoundary = this.res_Cap[0].Power2;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(power) && (power < leftBoundary || power > rightBoundary);
+					},
+					isForce1OutOfRange() {
+						const force = parseFloat(this.force1);
+						const leftBoundary = this.res_Cap[0].Force1;
+						const rightBoundary = this.res_Cap[0].Force2;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(force) && (force < leftBoundary || force > rightBoundary);
+					},
+					isPower2OutOfRange() {
+						const power = parseFloat(this.power2);
+						const leftBoundary = this.res_Cap[1].Power1;
+						const rightBoundary = this.res_Cap[1].Power2;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(power) && (power < leftBoundary || power > rightBoundary);
+					},
+					isForce2OutOfRange() {
+						const force = parseFloat(this.force2);
+						const leftBoundary = this.res_Cap[1].Force1;
+						const rightBoundary = this.res_Cap[1].Force2;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(force) && (force < leftBoundary || force > rightBoundary);
+					},
+					isPower3OutOfRange() {
+						const power = parseFloat(this.power3);
+						const leftBoundary = this.res_Cap[2].Power1;
+						const rightBoundary = this.res_Cap[2].Power2;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(power) && (power < leftBoundary || power > rightBoundary);
+					},
+					isForce3OutOfRange() {
+						const force = parseFloat(this.force3);
+						const leftBoundary = this.res_Cap[2].Force1;
+						const rightBoundary = this.res_Cap[2].Force2;
+						if (leftBoundary === null || rightBoundary === null) return false;
+						return !isNaN(force) && (force < leftBoundary || force > rightBoundary);
+					},
+					isPinHeightOfRange() {
+						const pinHeight = parseFloat(this.pinHeight);
+						const PinHeightStandardValue = parseFloat(this.PinHeightStandardValue);
+						if (PinHeightStandardValue === null) return false;
+						return !isNaN(pinHeight) && (pinHeight > PinHeightStandardValue);
+
+					}
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					this.getNowTime();
+					this.qcCode = localStorage.userCode;
+					this.qc = localStorage.userName;
+				},
+				watch: {
+					map(newVal) {
+						if (newVal) {
+							this.dots = '';
+							this.sealing = '';
+						}
+					},
+					dots(newVal) {
+						if (newVal) {
+							this.map = '';
+							this.sealing = '';
+						}
+					},
+					sealing(newVal) {
+						if (newVal) {
+							this.map = '';
+							this.dots = '';
+						}
+					},
+				},
+				created() {
+					var type = getQueryVariable('type'); //线边仓库类型或仓库类型	
+					var materialContent = getQueryVariable('CardID') || ""; //线边仓库类型或仓库类型
+					var locationCode = getQueryVariable('EquipmentCode') || ""; //线边仓库类型或仓库类型
+					this.type = type ? type : '1';
+
+					if (this.type == 1) {
+						this.title = 'IC焊片站固晶机机台巡检记录表'
+						this.f2Label = '银浆型号';
+						this.f1Label = '框架批号';
+						this.ps='1、检验频率：1次/ 每48H/每机台2、判定正常为OK,异常为NG;判定异常时要有异常处理';
+						this.tag='JDW-WI-Q-Q006-04(f)'
+						// $("#WB").hide();
+
+					} else if (this.type == 2) {
+						this.title = 'IC焊线站焊线机台巡检记录表'
+						this.f2Label = '线径批号'
+						this.f1Label = '线径'
+						this.ps='1、检验频率：1次/每48H/每机台2、判定正常为OK,异常为NG;判定异常时要有异常处理';
+						this.tag='JDW-WI-Q-Q008-04(f)'
+						// $("#package").hide();
+						$("#dieModelId").hide();
+						// $("#DB").hide();
+						$("#fModel").hide();
+					}
+					if (locationCode != null) {
+						this.materialContent = materialContent
+						this.locationCode = locationCode
+					}
+
+				},
+				methods: {
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+					onSelect(value) {
+						// console.log("0");
+						const selectedOption = this.options.find(option => option.value === value);
+						// console.log("1", selectedOption);
+						this.selectedDieModel = selectedOption ? selectedOption.text : '';
+						// console.log("2", this.selectedDieModel);
+						this.pinNumber = selectedOption ? selectedOption.pinNumber : null;
+						this.dingzhen = selectedOption ? selectedOption.dingzhen : '';
+						this.f2Model = selectedOption ? selectedOption.PModel66 : '';
+						// console.log("onSelect运行了", this.pinNumber);
+						this.getDingzhen();
+					},
+
+					onSelect1(value) {
+						console.log("0");
+						const selectedOption = this.options.find(option => option.value === value);
+						console.log("1", selectedOption);
+						this.selectedDieModel = selectedOption ? selectedOption.text : '';
+						console.log("2", this.selectedDieModel);
+						// this.pinNumber = selectedOption ? selectedOption.pinNumber : null;
+						this.dingzhen = selectedOption ? selectedOption.dingzhen : '';
+						console.log("onSelect运行了", this.pinNumber);
+						this.getCapillarySpecifications();
+					},
+					getStyle(value, min, max) {
+						if (value === '') {
+							return {};
+						}
+						const numValue = Number(value);
+						if (numValue < min || numValue > max) {
+							return {
+								backgroundColor: 'red'
+							};
+						}
+						return {};
+					},
+					validateFloat(field) {
+						const value = this[field];
+						// 只允许数字、小数点、负号
+						const validatedValue = value.replace(/[^0-9.-]/g, '');
+						this[field] = validatedValue;
+
+						// 检查是否为有效的浮点数
+						if (!/^(-?\d+(\.\d*)?)?$/.test(validatedValue)) {
+							this.errorMsg1 = '请输入有效的浮点数';
+						} else {
+							this.errorMsg1 = '';
+						}
+					},
+
+
+					showPopup() {
+						this.showPicker = true;
+					},
+
+
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					//出入库提交
+					save: function() {
+						var self = this;
+
+						if (self.isSubmitting) {
+							return; // Prevent further clicks if the request is already in progress
+						}
+
+						var param = {
+							qcCode: localStorage.userCode,
+							qc: localStorage.userName,
+							remark: self.remark,
+
+							type: this.type,
+							pModel: self.pModel,
+							time: self.time,
+							package: self.package,
+							dieModel: self.dieModel,
+							f2Model: self.f2Model,
+							f1Model: self.f1Model,
+							vacuum: self.vacuum,
+							pressure: self.pressure,
+							pinHeight: self.pinHeight,
+							pinNumber: self.pinNumber,
+							detectionFunction: self.detectionFunction,
+							dots: self.dots,
+							map: self.map,
+							sealing: self.sealing,
+							s5: self.s5,
+							judgment: self.judgment,
+							drawingCorrect: self.drawingCorrect,
+							appearanceQualified: self.appearancQeualified,
+							procedureCorrect: self.procedureCorrect,
+							wireExpirationDate: self.wireExpirationDate,
+							power1: self.power1,
+							force1: self.force1,
+							power2: self.power2,
+							force2: self.force2,
+							power3: self.power3,
+							force3: self.force3,
+							preBond: self.preBond,
+							bond: self.bond,
+							postBond: self.postBond,
+							ballProtectFlow: self.ballProtectFlow,
+							lighterFlow: self.lighterFlow,
+							surfaceFlow: self.surfaceFlow,
+							cardId: self.materialContent,
+							locationCode: self.locationCode,
+							dingzhen: self.dingzhen,
+							wuliaokouya: this.wuliaokouya.includes("NG") ? "NG" : "",
+							shebeikouya: this.shebeikouya.includes("NG") ? "NG" : "",
+							piDao: self.piDao,
+							piDaoExpirationDate: self.piDaoExpirationDate
+						}
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							self.isSubmitting = true; // Disable the button
+							$.ajax({
+								url: serviceUrl + '/api/pda/postHung1',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+
+
+
+											self.errorMsg1 = '';
+
+											if (self.type == 2) {
+												self.$refs.filed1.focus();
+											} else {
+												self.$refs.filed2.focus();
+											}
+
+										})
+									} else {
+										self.$toast(res.msg);
+										if (self.type == 2) {
+											self.$refs.filed1.focus();
+										} else {
+											self.$refs.filed2.focus();
+										}
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								},
+								complete: function() {
+									self.isSubmitting = false; // Re-enable the button
+								}
+							})
+						}).catch(function() {
+							self.isSubmitting = false; // on cancel
+						});
+					},
+
+					//重置
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+
+
+							self.locationCode = '';
+
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+
+
+							self.materialContent = '';
+
+							self.selectedDieModel = '';
+							self.pModel = '';
+
+							self.package = '';
+							self.dieModel = '';
+							self.f2Model = '';
+							self.f1Model = '';
+							self.vacuum = '';
+							self.pressure = '';
+							self.pinHeight = '';
+							self.pinNumber = '';
+							self.detectionFunction = '';
+							self.dots = '';
+							self.map = '';
+							self.sealing = '';
+							self.s5 = '';
+							self.judgment = '';
+							self.drawingCorrect = '';
+							self.appearancQeualified = '';
+							self.procedureCorrect = '';
+							self.wireExpirationDate = '';
+							self.power1 = '';
+							self.force1 = '';
+							self.power2 = '';
+							self.force2 = '';
+							self.power3 = '';
+							self.force3 = '';
+							self.preBond = '';
+							self.bond = '';
+							self.postBond = '';
+							self.ballProtectFlow = '';
+							self.lighterFlow = '';
+							self.surfaceFlow = '';
+
+							self.remark = '';
+							self.dingzhen = '';
+							self.shebeikouya = [];
+							self.wuliaokouya = [];
+							self.pressureRight = '';
+							self.pressureLeft = '';
+							self.VacuumMin = -100;
+							self.VacuumMax = -60;
+							self.getNowTime()
+							self.PinHeightStandardValue = 0;
+							self.res_Cap.forEach(item => {
+								item.Power1 = null;
+								item.Power2 = null;
+								item.Force1 = null;
+								item.Force2 = null;
+							});
+							self.res_wireFlowData.forEach(item => {
+								item.FlowRateLeftBoundary = null;
+								item.FlowRateRightBoundary = null;
+							});
+
+							// 设置焦点
+							if (self.type == 2) {
+								self.$refs.filed0.focus();
+							} else {
+								self.$refs.filed2.focus();
+							}
+							if (self.type == 2) {
+								self.$refs.filed0.focus();
+							} else {
+								self.$refs.filed2.focus();
+							}
+						}).catch(function() {
+							// on cancel
+						});
+					},
+
+					//是否触发回车	
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0: {
+								self.onFocus(type);
+							}
+							case 1: //工卡			
+								self.onFocus(type);
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+							case 3: {
+								this.getDingzhen();
+								break;
+							}
+						}
+					},
+
+					getCapillarySpecifications() {
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCapillarySpecifications',
+							type: 'GET',
+							data: {
+								supplierName: self.dingzhen,
+								wireDiameter: self.f1Model,
+								piDao: self.piDao,
+								wire: self.bondMode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log("data", res.data);
+									self.errorMsg1 = '';
+									self.res_Cap = res.data.res_Cap;
+									self.res_wireFlowData = res.data.wireFlowData;
+								} else {
+									self.$toast(res.msg);
+									// self.pinNumber = '';/
+									// self.$refs.filed3.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常111');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+					getDingzhen() {
+						console.log(this.pinNumber);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getDingZhen',
+							type: 'GET',
+							data: {
+								dingZhen: self.dingzhen,
+								pinNumber: self.pinNumber,
+								locationCode: self.locationCode,
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log("data", res.data);
+									self.errorMsg1 = ''
+									self.PinHeightStandardValue = res.data.PinHeightStandardValue
+									console.log("PinHeightStandardValue", res.data.PinHeightStandardValue,
+										self.PinHeightStandardValue);
+								} else {
+									self.$toast(res.msg);
+									self.pinNumber = '';
+									// self.$refs.filed3.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常111');
+								self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+					//获取卡号信息
+					getCardInfo() {
+						console.log(this.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.materialContent,
+								type: this.type,
+								equipmentCode: self.locationCode,
+								kind: 1
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log("data", res.data);
+									self.errorMsg1 = ''
+									self.materialContent = res.data.CardId
+									self.package = res.data.Package;
+									self.dieModel = res.data.DieModel;
+									self.pModel = res.data.PModel;
+									self.f1Model = res.data.F1Model;
+									self.f2Model = res.data.F2Model;
+									// self.locationCode = res.data.LocationCode
+									// self.dingzhen = res.data.Dingzhen;
+									self.pressureLeft = res.data.pressureLeft;
+									self.pressureRight = res.data.pressureRight;
+									// self.res_Cap = res.data.res_Cap;
+									// self.res_wireFlowData = res.data.wireFlowData;
+									self.options = res.data.Options;
+									self.wireList = res.data.wireList;
+									// self.$refs.filed2.focus();
+
+								} else {
+									self.$toast(res.msg);
+									self.materialContent = '';
+									self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常111');
+								// self.materialContent = '';
+								self.$refs.filed2.focus();
+							}
+						})
+					},
+
+					//自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						} else if (type == 2) {
+							// self.$refs.filed1.focus();
+						}
+					},
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+
+				}
+			})
+			Vue.config.devtools = true; //允许进行调试
+		</script>
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+				/* 根据需要调整高度 */
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				/* padding: 10px; */
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+
+</html>

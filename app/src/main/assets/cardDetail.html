@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>工卡明细</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar title="工卡明细" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div v-if="showDetail">
+			<van-collapse v-model="activeNames">
+				<van-collapse-item title="工卡详情" name="1">
+					<div>
+						<van-cell title="工卡卡号" v-model="basicForm.basicInfo.cardID" />
+					</div>
+					<div>
+						<van-cell title="客户代码" v-model="basicForm.basicInfo.customerCode" />
+					</div>
+					<div>
+						<van-cell title="封装形式" v-model="basicForm.basicInfo.packageName" />
+					</div>
+					<div>
+						<van-cell title="产品编码" v-model="basicForm.basicInfo.partNumber" />
+					</div>
+					<div>
+						<van-cell title="产品型号" v-model="basicForm.basicInfo.pModel" />
+					</div>
+					<div>
+						<van-cell title="生产工单" v-model="basicForm.basicInfo.workOrder" />
+					</div>
+					<div>
+						<van-cell title="销售订单" v-model="basicForm.basicInfo.soCode" />
+					</div>
+					<div>
+						<van-cell title="工位状态" v-model="basicForm.basicInfo.statusText" />
+					</div>
+					<div>
+						<van-cell title="芯片批次" v-model="basicForm.basicInfo.dieBatch" />
+					</div>
+					<!-- <div>
+						<van-cell title="客户批次" v-model="basicForm.basicInfo.customerBatch" />
+					</div> -->
+					<div>
+						<van-cell title="BOM编码" v-model="basicForm.workOrderInfo.bomCode" />
+					</div>
+					<div>
+						<van-cell title="包装规范" v-model="basicForm.workOrderInfo.packingCode" />
+					</div>
+					<div>
+						<van-cell title="测试规范" v-model="basicForm.workOrderInfo.programCode" />
+					</div>
+					<div>
+						<van-cell title="工艺流程" v-model="basicForm.workOrderInfo.processCode" />
+					</div>
+					<div>
+						<van-cell title="压焊图编码" v-model="basicForm.workOrderInfo.bondCode" />
+					</div>
+					<div>
+						<van-cell title="印章图编码" v-model="basicForm.workOrderInfo.markCode" />
+					</div>
+					<div>
+						<van-cell title="分选规范" v-model="basicForm.workOrderInfo.sortingCode" />
+					</div>
+					<div>
+						<van-cell title="当前数量" v-model="basicForm.basicInfo.currentQuantity" />
+					</div>
+					<div>
+						<van-cell title="电镀方式" v-model="basicForm.workOrderInfo.electroPlating" />
+					</div>
+					<div>
+						<van-cell title="拆分父卡" v-model="basicForm.basicInfo.fatherCard" />
+					</div>
+				</van-collapse-item>
+			</van-collapse>
+			<van-tabs v-model="active" @change="onChange" color="#1989fa">
+				<van-tab title="工卡记录">
+					<div class="tab_con">
+						<div class="normal_item" v-for="(item, index) in basicForm.records">
+							<div class="normal_list">当前工步：{{item.preStep}}</div>
+							<div class="normal_list">操作后工步：{{item.nextStep}}</div>
+							<div class="normal_list">操作指令：{{item.operationName}}</div>
+							<div class="normal_list">操作时间：{{item.operationTime}}</div>
+							<div class="normal_list">数量：{{item.quantityAfter}}
+								<span class="align_right">状态：{{item.statusAfter}}</span>
+							</div>
+							<div class="normal_list">缺陷代码/杀数：{{item.reasonCode}}
+								<span class="align_right">设备机台：{{item.equipmentCode}}</span>
+							</div>
+							<div class="normal_list">框架条数：{{item.frameQuantity}}
+								<span class="align_right">盒号：{{item.boxCode}}</span>
+							</div>
+							<div class="normal_list">重量：{{item.cardWeight}}
+								<span class="align_right">操作人：{{item.modifyUserName}}</span>
+							</div>
+							<div class="normal_list">备注：{{item.comments}}</div>
+						</div>
+						<!-- <div class="normal_item">
+							<div class="normal_list">操作前工序：</div>
+							<div class="normal_list">操作后工序：计划待投产</div>
+							<div class="normal_list">操作指令：</div>
+							<div class="normal_list">操作时间：2020-02-20 18:25</div>
+							<div class="normal_list">数量：10<span class="align_right">状态：正常</span></div>
+							<div class="normal_list">缺陷代码/杀数：<span class="align_right">设备机台：</span></div>
+							<div class="normal_list">框架条数：<span class="align_right">盒号：</span></div>
+							<div class="normal_list">重量：<span class="align_right">操作人：</span></div>
+							<div class="normal_list">备注：</div>
+						</div>
+						<div class="normal_item">
+							<div class="normal_list">操作前工序：</div>
+							<div class="normal_list">操作后工序：计划待投产</div>
+							<div class="normal_list">操作指令：</div>
+							<div class="normal_list">操作时间：2020-02-20 18:25</div>
+							<div class="normal_list">数量：10<span class="align_right">状态：正常</span></div>
+							<div class="normal_list">缺陷代码/杀数：<span class="align_right">设备机台：</span></div>
+							<div class="normal_list">框架条数：<span class="align_right">盒号：</span></div>
+							<div class="normal_list">重量：<span class="align_right">操作人：</span></div>
+							<div class="normal_list">备注：</div>
+						</div> -->
+					</div>
+				</van-tab>
+				<van-tab title="工艺流程">
+					<van-collapse v-model="activeNames2">
+						<van-collapse-item title="基本信息" name="1">
+							<div>
+								<van-cell title="工艺名称" v-model="basicForm.routingInfo.routingName" />
+							</div>
+							<div>
+								<van-cell title="所属分类" v-model="basicForm.routingInfo.className" />
+							</div>
+							<div>
+								<van-cell title="备注" v-model="basicForm.routingInfo.comments" />
+							</div>
+						</van-collapse-item>
+						<van-collapse-item title="流程明细" name="2">
+							<div class="normal_item" v-for="(item, index) in basicForm.routingInfo.steps">
+								<div class="normal_list"> 1、{{item.stepCode}}<span
+										class="align_right">工步名称：{{item.stepName}}</span></div>
+								<div class="normal_list">工步属性：{{item.stepFlag}}</div>
+							</div>
+							<!-- <div class="normal_item">
+								<div class="normal_list"> 2、B01<span class="align_right">工序名称：计划待投产</span></div>
+								<div class="normal_list">工序属性：上芯工序</div>
+							</div>
+							<div class="normal_item">
+								<div class="normal_list"> 3、B01<span class="align_right">工序名称：计划待投产</span></div>
+								<div class="normal_list">工序属性：上芯工序</div>
+							</div> -->
+						</van-collapse-item>
+					</van-collapse>
+				</van-tab>
+			</van-tabs>
+		</div>
+
+		<van-empty image="search" description="未查询到有效工卡" v-if="!showDetail" />
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				active: '',
+				value: '内容',
+				showpopup: false,
+				activeNames: ['1'],
+				activeNames2: [],
+				result: [],
+				cardID: '',
+				basicForm: {},
+				showDetail: true
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created: function () {
+				var cardid = getQueryVariable('cardID');
+				this.cardID = cardid ? cardid : '';
+				this.getCardDetail()
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//获取工卡明细
+				getCardDetail: function () {
+					var self = this;
+					$.ajax({
+						url: serviceUrl + '/api/pda/carddetail',
+						type: 'GET',
+						data: {
+							cardID: self.cardID
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.basicForm = res.data;
+							} else {
+								self.$toast(res.msg);
+								self.showDetail = false
+							}
+						},
+						error: function () {
+							self.showDetail = false
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.value = codedata.Barcode;
+				},
+
+				onChange() {
+
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

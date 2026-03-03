@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>主界面</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar title="主界面" />
+			</div>
+			<div class="header_tip">欢迎{{userName}} <span @click="rebackLogin">退出登录</span></div>
+			<div class="main_menu">
+				<ul>
+					<!-- 智能刷卡 -->
+					<li @click="showDilog(1)" v-if="menuPowers.menu_zhinengshuaka"><img src="images/main_icon01.png" />
+					</li>
+					<!--<li @click="showDilog(2)"><img src="images/main_icon02.png" /></li>-->
+					<!--<li @click="showDilog(3)"><img src="images/main_icon03.png" /></li>-->
+					<!-- 扣押 -->
+					<li @click="showDilog(7)" v-if="menuPowers.menu_kouya"><img src="images/main_icon07.png" /></li>
+					<!-- 退回 -->
+					<li @click="showDilog(9)" v-if="menuPowers.menu_tuihui"><img src="images/main_icon09.png" /></li>
+					<!-- 工卡查询 -->
+					<li @click="showDilog(6)" v-if="menuPowers.menu_gongkachaxun"><img src="images/main_icon06.png" />
+					</li>
+
+					<!-- 测试前烘烤批量开报工 -->
+					<li v-if="menuPowers.menu_huojiatiaozheng" @click="showChangeOpers=true"><img
+							src="images/main_icon34.png" /></li>
+					<!-- 包装工序库位维护 -->
+					<li v-if="menuPowers.menu_xianghaohuojiahaobangding"><a href="packageWhBonding.html"><img
+								src="images/main_icon36.png" /></a></li>
+					<!-- 标签校验 -->
+					<li v-if="menuPowers.menu_xianghaohuojiahaobangding" @click="showChangeCheck=true"><img
+							src="images/main_icon41.png" /></li>
+					<!-- IC设备巡检 -->
+					<li @click="showChangehung=true"><img src="images/main_icon38.png" /></li>
+					<!-- 物料上机验证 -->
+					<li v-if="menuPowers.menu_zhinengshuaka"><a href="checkMaterial.html"><img
+								src="images/main_icon42.png" /></a></li>
+					<!-- ICDB自检 -->
+					<li v-if="menuPowers.menu_xianghaohuojiahaobangding"><a href="DBSelfTest.html"><img
+								src="images/main_icon43.png" /></a></li>
+					<!-- IC生产记录 -->
+					<li @click="showChangeshengchan=true"><img src="images/main_icon44.png" /></li>
+
+					<!-- IC成型站批量操作 -->
+					<li @click="showChangepiliang=true"><img src="images/main_icon45.png" /></li>
+
+					<!-- IC成型站批量操作 -->
+					<li><a href="performanceOutput.html"><img src="images/main_icon46.png" /></a></li>
+				</ul>
+				<ul>
+					<!-- 成品入库 -->
+					<li @click="showDilog(4)" v-if="menuPowers.menu_chengpinruku"><img src="images/main_icon04.png" />
+					</li>
+					<!-- 成品出库 -->
+					<li @click="showDilog(5)" v-if="menuPowers.menu_chengpinchuku"><img src="images/main_icon05.png" />
+					</li>
+					<!--<li><a href="discard.html"><img src="images/main_icon08.png" /></a></li>-->
+					<!--<li><img src="images/main_icon10.png" /></li>-->
+					<!--<li><img src="images/main_icon11.png" /></li>-->
+					<!--<li><img src="images/main_icon12.png" /></li>-->
+					<!--<li><img src="images/main_icon13.png" /></li>-->
+					<!--<li><img src="images/main_icon14.png" /></li>-->
+					<!--<li><img src="images/main_icon15.png" /></li>-->
+				</ul>
+				<ul>
+					<!-- 线边库入库 -->
+					<li @click="showDilog(17)" v-if="menuPowers.menu_xianbiankuruku"><img
+							src="images/main_icon17.png" />
+					</li>
+					<!-- 线边库出库 -->
+					<li @click="showDilog(18)" v-if="menuPowers.menu_xianbiankuchuku"><img
+							src="images/main_icon18.png" />
+					</li>
+					<!-- 线边库仓库调整 -->
+					<li v-if="menuPowers.menu_huojiatiaozheng" @click="showChangeLinestores=true"><img
+							src="images/main_icon31.png" /></li>
+
+				</ul>
+				<ul>
+					<!-- 盘点 -->
+					<li v-if="menuPowers.menu_pandian"><a href="makeInventory.html"><img
+								src="images/main_icon16.png" /></a>
+					</li>
+					<!-- 停机 -->
+					<li @click="showDilog(19)" v-if="menuPowers.menu_tingji"><img src="images/main_icon20.png" /></li>
+					<!-- 登修 -->
+					<li @click="showDilog(21)" v-if="menuPowers.menu_dengxiu"><img src="images/main_icon37.png" /></li>
+					<!-- 复机 -->
+					<li @click="showDilog(20)" v-if="menuPowers.menu_fuji"><img src="images/main_icon21.png" /></li>
+					<!-- 质检 -->
+					<li @click="showDilog(22)" v-if="menuPowers.menu_zhijian"><img src="images/main_icon48.png" /></li>
+					<!-- 待修 -->
+					<li v-if="menuPowers.menu_daixiu"><a href="daixiu.html"><img src="images/main_icon49.png" /></a>
+					</li>
+					<!-- 待检 -->
+					<li v-if="menuPowers.menu_daijian"><a href="daijian.html"><img src="images/main_icon50.png" /></a>
+					</li>
+					<!-- 保养 -->
+					<li v-if="menuPowers.menu_baoyang"><a href="baoyang.html"><img src="images/main_icon40.png" /></a>
+					</li>
+					<!-- 点检 -->
+					<li v-if="menuPowers.menu_dianjian"><a href="dianjian.html"><img src="images/main_icon39.png" /></a>
+					</li>
+					<!-- 模具 -->
+					<li @click="showMJRecord=true"><img src="images/main_icon47.png" /></li>
+					<!-- 备品备件 -->
+					<li @click="showSpareOut=true"><img src="images/main_icon51.png" /></li>
+					<!-- 温湿度 -->
+					<li v-if="menuPowers.menu_dianjian"><a href="THInspection.html"><img src="images/main_icon52.png" /></a></li>
+					<!-- 改机 -->
+					<li ><a href="deviceRemould.html"><img src="images/main_icon53.png" /></a></li>
+					<li ><a href="daigaiji.html"><img src="images/main_icon54.png" /></a></li>
+				</ul>
+				<ul>
+					<!-- 临时标签 -->
+					<li v-if="menuPowers.menu_linshibiaoqian"><a href="tempLabel.html"><img
+								src="images/main_icon22.png" /></a></li>
+					<!-- 临表数量 -->
+					<li v-if="menuPowers.menu_linbiaoshuliang"><a href="tempLabelNumber.html"><img
+								src="images/main_icon23.png" /></a></li>
+					<!-- QA标签 -->
+					<li v-if="menuPowers.menu_qabiaoqian"><a href="QALabel.html"><img
+								src="images/main_icon24.png" /></a></li>
+					<!-- 自动包装机标签绑定 -->
+					<li v-if="menuPowers.menu_qalabel"><a href="CardLabelDetail.html"><img
+								src="images/main_icon32.png" /></a></li>
+					<!-- 外箱标签 -->
+					<li v-if="menuPowers.menu_waixiangbiaoqian"><a href="outboxLabel.html"><img
+								src="images/main_icon25.png" /></a></li>
+					<!-- 标签查询 -->
+					<li v-if="menuPowers.menu_biaoqianchaxun"><a href="labelQuery.html"><img
+								src="images/main_icon26.png" /></a></li>
+					<!-- 工卡标签 -->
+					<li v-if="menuPowers.menu_gongkabiaoqian"><a href="cardLabelQuery.html"><img
+								src="images/main_icon27.png" /></a></li>
+					<!-- 箱号绑定 -->
+					<li v-if="menuPowers.menu_xianghaohuojiahaobangding"><a href="boxCodeBonding.html"><img
+								src="images/main_icon33.png" /></a></li>
+					<!-- 发货单校验 -->
+					<li v-if="menuPowers.menu_fahuodanjiaoyan" @click="showfahuodan=true"><img
+							src="images/main_icon35.png" /></a></li>
+				</ul>
+				<ul>
+					<!-- 成品上架更名为仓库货架调整 -->
+					<li v-if="menuPowers.menu_chengpinshangjia" @click="showcheckStockType=true"><img
+							src="images/main_icon30.png" /></li>
+					<!-- 成品备货 -->
+					<li v-if="menuPowers.menu_chengpinbeihuo"><a href="productStockUp.html"><img
+								src="images/main_icon29.png" /></a></li>
+					<!-- 入库单检验 -->
+					<li v-if="menuPowers.menu_rukudanxiaoyan"><a href="productIn.html"><img
+								src="images/main_icon28.png" /></a></li>
+				</ul>
+			</div>
+			<!--仓库货架调整-->
+			<div>
+				<van-dialog title="请选择物料类型" v-model="showcheckStockType" show-cancel-button
+					:show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toCheckStockIn(1)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">成品</van-button>
+						<van-button @click="toCheckStockIn(2)" style="width:100%;" plain hairline
+							type="default">晶圆</van-button>
+					</div>
+				</van-dialog>
+			</div>
+			<!--线边仓货架调整-->
+			<div>
+				<van-dialog title="请选择物料类型" v-model="showChangeLinestores" show-cancel-button
+					:show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toChangeLinestores(1)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">晶圆</van-button>
+						<van-button @click="toChangeLinestores(2)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">框架</van-button>
+						<van-button @click="toChangeLinestores(3)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">物料</van-button>
+						<van-button @click="toChangeLinestores(4)" style="width:100%;" plain hairline
+							type="default">测试</van-button>
+					</div>
+				</van-dialog>
+			</div>
+
+			<!--测试前烘烤开工报工-->
+			<div>
+				<van-dialog title="请选择操作" v-model="showChangeOpers" show-cancel-button :show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toChangeOpers(1)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">批量开工</van-button>
+						<van-button @click="toChangeOpers(2)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">批量报工</van-button>
+
+					</div>
+				</van-dialog>
+			</div>
+			<!--测试前烘烤开工报工-->
+			<div>
+				<van-dialog title="请选择操作" v-model="showChangeCheck" show-cancel-button :show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toChangeCheck(1)" class="custom-button button-1"
+							style="width:100%;margin:0 0 10px" plain hairline type="default">各级标签对比</van-button>
+						<van-button @click="toChangeCheck(2)" class="custom-button button-2"
+							style="width:100%;margin:0 0 10px" plain hairline type="default">测试板对比</van-button>
+
+						<van-button style="width:100%;margin:0 0 10px" @click="toChangeCheck(3)"
+							class="custom-button button-4">测试板报修</van-button>
+						<van-button style="width:100%;margin:0 0 10px" @click="toChangeCheck(4)"
+							class="custom-button button-3">测试板下机入库</van-button>
+
+					</div>
+				</van-dialog>
+			</div>
+
+			<!--IC生产记录-->
+			<div>
+				<van-dialog title="请选择操作" v-model="showChangeshengchan" show-cancel-button :show-confirm-button="false">
+					<div style="width: 80%;height: 400px;margin:20px auto;overflow-y: auto;">
+						<van-button @click="toChangeshengchan(16)" class="custom-button button-4">DB摆臂机点检</van-button>
+						<van-button @click="toChangeshengchan(17)" class="custom-button button-4">DB焊臂机点检</van-button>
+						<van-button @click="toChangeshengchan(22)" class="custom-button button-4">DB生产记录</van-button>
+						<van-button @click="toChangeshengchan(18)" class="custom-button button-4">DB 点检</van-button>
+						<van-button @click="toChangeshengchan(19)" class="custom-button button-4">固化炉点检</van-button>
+						<van-button @click="toChangeshengchan(23)" class="custom-button button-4">清胶杯记录</van-button>
+
+						<van-button @click="toChangeshengchan(20)" class="custom-button button-7">WB点检记录</van-button>
+						<van-button @click="toChangeshengchan(21)" class="custom-button button-7">WB生产记录</van-button>
+						<van-button @click="toChangeshengchan(4)" class="custom-button button-1">注塑生产记录</van-button>
+						<van-button @click="toChangeshengchan(5)" class="custom-button button-1">成型生产记录</van-button>
+
+						<van-button @click="toChangeshengchan(14)" class="custom-button button-1">注塑点检</van-button>
+						<van-button @click="toChangeshengchan(15)" class="custom-button button-1">成型点检</van-button>
+						<van-button @click="toChangeshengchan(24)" class="custom-button button-1">回流焊生产记录</van-button>
+						<van-button @click="toChangeshengchan(25)" class="custom-button button-1">去溢胶生产记录</van-button>
+						<van-button @click="toChangeshengchan(26)" class="custom-button button-1">回流焊点检</van-button>
+						<!-- 新增空div作为占位 -->
+						<van-button disabled style="visibility: hidden;">占位</van-button>
+						<van-button @click="toChangeshengchan(2)" class="custom-button button-2">包装自检</van-button>
+						<van-button @click="toChangeshengchan(1)" class="custom-button button-2">包装生产</van-button>
+						<van-button @click="toChangeshengchan(3)" class="custom-button button-3">测试站全检记录本</van-button>
+						<van-button @click="toChangeshengchan(6)" class="custom-button button-3">焊线产品打印编带保养</van-button>
+						<van-button @click="toChangeshengchan(7)" class="custom-button button-3">焊线产品清机点检记录</van-button>
+						<van-button @click="toChangeshengchan(8)" class="custom-button button-3">测试编带正向控制</van-button>
+						<van-button @click="toChangeshengchan(9)" class="custom-button button-3">测试站编带机点检记录</van-button>
+						<van-button @click="toChangeshengchan(10)" class="custom-button button-3">测试站拉力记录表</van-button>
+						<van-button @click="toChangeshengchan(11)"
+							class="custom-button button-3">测试站烘箱温度点检表</van-button>
+						<van-button @click="toChangeshengchan(12)"
+							class="custom-button button-3">真空包装机点检记录表</van-button>
+						<van-button @click="toChangeshengchan(13)" class="custom-button button-3">测试TCM本</van-button>
+					</div>
+				</van-dialog>
+			</div>
+
+			<!--模具记录-->
+			<div>
+				<van-dialog title="请选择操作" v-model="showMJRecord" show-cancel-button :show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toMJRecord(1)" class="custom-button button-1">模具上机</van-button>
+						<van-button @click="toMJRecord(2)" class="custom-button button-1">模具下机</van-button>
+					</div>
+				</van-dialog>
+			</div>
+
+			<!--IC生产记录-->
+			<div>
+				<van-dialog title="请选择操作" v-model="showChangepiliang" show-cancel-button :show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toChangepiliang(1)" class="custom-button button-2">成型批量开工</van-button>
+						<van-button @click="toChangepiliang(2)" class="custom-button button-1">成型批量报工</van-button>
+					</div>
+				</van-dialog>
+			</div>
+
+			<!--备品备件-->
+			<div>
+				<van-dialog title="请选择操作" v-model="showSpareOut" show-cancel-button :show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toSpareOut(1)" class="custom-button button-2">备品备件领用</van-button>
+						<van-button @click="toSpareOut(2)" class="custom-button button-1">测试片领用</van-button>
+					</div>
+				</van-dialog>
+			</div>
+
+			<!--IC发货单检验-->
+			<div>
+				<van-dialog title="请选择操作" v-model="showfahuodan" show-cancel-button :show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toChangefahuodan(1)" class="custom-button button-2">发货单检验</van-button>
+						<van-button @click="toChangefahuodan(2)" class="custom-button button-1">出库单检验</van-button>
+					</div>
+				</van-dialog>
+			</div>
+			<!-- IC测试巡检 -->
+			<div>
+				<van-dialog title="请选择操作" v-model="showChangehung" show-cancel-button :show-confirm-button="false">
+					<!-- 在标题区域添加切换按钮 -->
+					<template #title>
+						<div class="dialog-header">
+							<span>请选择操作</span>
+							<van-button size="small" type="primary" class="switch-button" @click="onSwitch">
+								{{Switch}}
+							</van-button>
+						</div>
+					</template>
+					<div v-if="Switch=='下一页'">
+						<div class="button-container">
+							<van-button @click="toChangehung(1)" class="custom-button button-1">Die
+								Bond设备别巡检</van-button>
+							<van-button @click="toChangehung(2)" class="custom-button button-2">Wire
+								Bond设备别巡检</van-button>
+						</div>
+						<div class="button-container">
+							<van-button @click="toChangehung(6)" class="custom-button button-6">IC
+								焊片后烘箱检查记录表</van-button>
+							<van-button @click="toChangehung(7)" class="custom-button button-7">IC
+								Plasma查核巡检记录表</van-button>
+						</div>
+						<div class="button-container">
+
+							<van-button @click="toChangehung(3)" class="custom-button button-3">成型站品质首检/巡检</van-button>
+							<van-button @click="toChangehung(4)" class="custom-button button-4">塑封站品质首检/巡检</van-button>
+						</div>
+						<div class="button-container">
+							<van-button @click="toChangehung(5)"
+								class="custom-button button-5 full-width">IC测试站品质首件确认表</van-button>
+						</div>
+					</div>
+					<div v-else>
+						<div class="button-container">
+							<van-button @click="toChangeFirst(1)" class="custom-button button-1">IC成型站记录</van-button>
+							<van-button @click="toChangeFirst(2)" class="custom-button button-2">IC包装站记录</van-button>
+							<van-button @click="toChangeFirst(3)" class="custom-button button-3">IC去溢胶记录</van-button>
+							<van-button @click="toChangeFirst(4)" class="custom-button button-4">IC测试站拉力记录</van-button>
+							<van-button @click="toChangeFirst(5)" class="custom-button button-5">IC电镀站记录</van-button>
+							<van-button @click="toChangeFirst(6)"
+								class="custom-button button-6">焊线站清洗机台水滴测试</van-button>
+							<van-button @click="toChangeFirst(7)"
+								class="custom-button button-7">焊线站过站产品外观检验</van-button>
+							<van-button @click="toChangeFirst(8)" class="custom-button button-5">焊片站芯片空洞检测</van-button>
+						</div>
+					</div>
+
+				</van-dialog>
+			</div>
+
+			<div>
+				<van-dialog title="工卡确认" v-model="showScan" show-cancel-button :before-close="onClose"
+					@confirm="onConfirm">
+					<van-cell-group>
+						<van-field v-model="Barcode" label="工卡" input-align="right" placeholder="扫描或手动输入" ref="filed1"
+							@keyup.enter.native="onConfirm" autofocus required />
+					</van-cell-group>
+				</van-dialog>
+			</div>
+			<div>
+				<van-dialog title="扫描设备" v-model="showMachine" show-cancel-button :before-close="onCloseMachine"
+					@confirm="onConfirm">
+					<van-cell-group>
+						<van-field v-model="Machinecode" label="设备编码" input-align="right" placeholder="扫描或手动输入"
+							@keyup.enter.native="onConfirm" autofocus required ref="filed2" />
+					</van-cell-group>
+				</van-dialog>
+			</div>
+			<div>
+				<van-dialog title="仓库选择" v-model="showWarehouse" show-cancel-button :before-close="onCloseWarehouse"
+					@confirm="onConfirm">
+					<div>
+						<van-cell title="仓库选择" v-model="warehouseDisplay" is-link @click="showPopup" />
+					</div>
+				</van-dialog>
+			</div>
+			<van-popup v-model="showPicker" position="bottom">
+				<van-picker show-toolbar :columns="columns" @cancel="showPicker = false" @confirm="onConfirmPopup"
+					value-key="storeName" />
+			</van-popup>
+		</div>
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					userName: localStorage.userName ? localStorage.userName : '',
+					showScan: false,
+					Barcode: '',
+					menuType: '',
+					showMachine: false,
+					Machinecode: '',
+					showWarehouse: false,
+					columns: [],
+					showPicker: false,
+					warehouse: '',
+					warehouseDisplay: '',
+					warehouseType: '',
+					menuPowers: {},
+					showcheckStockType: false,
+					showChangeLinestores: false,
+					showChangeOpers: false,
+					showChangehung: false,
+					showChangeCheck: false,
+					showChangeshengchan: false,
+					showMJRecord: false,
+					showChangepiliang: false,
+					showfahuodan: false,
+					showSpareOut: false,
+					Switch: '下一页'
+					//focus1
+				},
+				created: function() {
+					this.getMenu()
+				},
+				//封装好的方法挂载到mounted里面
+				mounted: function(data) {
+					window.scanCode = this.scanCode;
+				},
+				directives: {
+					focus: {
+						update: function(el) {
+							el.focus()
+						}
+					},
+				},
+				methods: {
+					onSwitch() {
+						this.Switch == '上一页' ? this.Switch = '下一页' : this.Switch = '上一页'
+						console.log("切换按钮被点击");
+						// 切换逻辑
+					},
+					rebackLogin() {
+						window.location.replace('login.html')
+					},
+					scanCode: function(data) { //监听扫码事件
+						var codedata = JSON.parse(data);
+						if (this.showScan) {
+							this.Barcode = codedata.Barcode;
+							this.Machinecode = codedata.Barcode;
+							this.onConfirm()
+						}
+					},
+					//获取菜单权限
+					getMenu: function() {
+						var self = this
+						$.ajax({
+							url: serviceUrl + '/api/pda/getmenupowers',
+							type: 'GET',
+							data: {
+								userID: localStorage.userCode
+							},
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							success: function(res) {
+								if (res.code == 200) {
+									self.menuPowers = res.data;
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+					showDilog: function(menuType) {
+						this.menuType = menuType;
+						if (menuType == 19 || menuType == 20 || menuType == 21 || menuType == 22 || menuType == 8) {
+							this.showMachine = true;
+							this.Machinecode = '';
+							this.$nextTick(() => {
+								this.$refs.filed2.focus();
+							});
+							//
+						} else if (menuType == 17 || menuType == 18 || menuType == 4 || menuType == 5) {
+							this.showWarehouse = true;
+							this.warehouse = '';
+							this.warehouseDisplay = '';
+							this.warehouseType = '';
+						} else {
+							this.showScan = true;
+							this.Barcode = '';
+							this.$nextTick(() => {
+								this.$refs.filed1.focus();
+							});
+							//this.$refs.filed1.focus();
+						}
+
+					},
+					onClose: function(action, done) {
+						if (action === "confirm") {
+							return done(false);
+						} else {
+							return done();
+							this.showScan = false
+						}
+					},
+					toCheckStockIn(type) {
+						window.location.href = 'changeStore.html?warehousetype=1&type=' + type
+					},
+					//线边仓库位调整
+					toChangeLinestores(type) {
+						window.location.href = 'changeStore.html?warehousetype=2&type=' + type
+					},
+					//测试前烘烤
+					toChangehung(type) {
+						if (type == 1) {
+							window.location.href = 'exhung.html?Process=DB'
+						} else if (type == 3) {
+							window.location.href = 'exhung.html?Process=CX'
+						} else if (type == 4) {
+							window.location.href = 'exhung.html?Process=ZS'
+						} else if (type == 2) {
+							window.location.href = 'exhung.html?Process=WB'
+						} else if (type == 5) {
+							window.location.href = 'exhung.html?Process=CS'
+						} else if (type == 6) {
+							window.location.href = 'hung6.html'
+						} else if (type == 7) {
+							window.location.href = 'hung7.html'
+						}
+					},
+					//测试前烘烤
+					toChangeFirst(type) {
+						if (type == 1) {
+							window.location.href = 'FirstInspection1.html'
+						} else if (type == 2) {
+							window.location.href = 'FirstInspection2.html'
+						} else if (type == 3) {
+							window.location.href = 'FirstInspection3.html'
+						} else if (type == 4) {
+							window.location.href = 'FirstInspection4.html'
+						} else if (type == 5) {
+							window.location.href = 'FirstInspection5.html'
+						} else if (type == 6) {
+							window.location.href = 'FirstInspection6.html'
+						} else if (type == 7) {
+							window.location.href = 'FirstInspection7.html'
+						} else if (type == 8) {
+							window.location.href = 'FirstInspection8.html'
+						}
+					},
+
+					//IC包装自检记录
+					toChangeshengchan(type) {
+						if (type == 1) {
+							window.location.href = 'hung10.html'
+						} else if (type == 2) {
+							window.location.href = 'hung8.html'
+						} else if (type == 3) {
+							window.location.href = 'hung9.html'
+						} else if (type == 4) {
+							window.location.href = 'hung11.html'
+						} else if (type == 5) {
+							window.location.href = 'hung12.html'
+						} else if (type == 6) {
+							window.location.href = 'testSelfMmaintenanceRecord.html'
+						} else if (type == 7) {
+							window.location.href = 'solderingCleaningRecord.html'
+						} else if (type == 8) {
+							window.location.href = 'testPositrolRecord.html'
+						} else if (type == 9) {
+							window.location.href = 'tapeBraidingInspectionRecord.html'
+						} else if (type == 10) {
+							window.location.href = 'FirstInspection4.html'
+						} else if (type == 11) {
+							window.location.href = 'testOvenInspection.html'
+						} else if (type == 12) {
+							window.location.href = 'packagingVacuumRecord.html'
+						} else if (type == 13) {
+							window.location.href = 'testTCM.html'
+						} else if (type == 14) {
+							window.location.href = 'zsinspection.html'
+						} else if (type == 15) {
+							window.location.href = 'cxinspection.html'
+						} else if (type == 16) {
+							window.location.href = 'DBDailyInspection.html?type=' + 1
+						} else if (type == 17) {
+							window.location.href = 'DBDailyInspection.html?type=' + 2
+						} else if (type == 18) {
+							window.location.href = 'DBInspection.html'
+						} else if (type == 19) {
+							window.location.href = 'DBOvenInspection.html'
+						} else if (type == 20) {
+							window.location.href = 'wbtcm.html'
+						} else if (type == 21) {
+							window.location.href = 'wbinspection.html'
+						} else if (type == 22) {
+							window.location.href = 'hung13.html'
+						} else if (type == 23) {
+							window.location.href = 'cleaningPlasticCups.html'
+						} else if (type == 24) {
+							window.location.href = 'reflowSolderJointProduction.html'
+						} else if (type == 25) {
+							window.location.href = 'excessGlueProduction.html'
+						} else if (type == 26) {
+							window.location.href = 'reflowSolderJointInspection.html'
+						}
+					},
+
+					//模具记录
+					toMJRecord(type) {
+						if (type == 1) {
+							window.location.href = 'MJRecord.html'
+						} else if (type == 2) {
+							window.location.href = 'MJRecord2.html'
+						}
+					},
+
+					//IC包装自检记录
+					toChangepiliang(type) {
+						if (type == 1) {
+							window.location.href = 'batchinout.html?type=' + type
+						} else if (type == 2) {
+							window.location.href = 'batchinout.html?type=' + type
+						}
+					},
+
+					//IC包装自检记录
+					toSpareOut(type) {
+						if (type == 1) {
+							window.location.href = 'spareIO2.html'
+						} else if (type == 2) {
+							window.location.href = 'spareIO.html'
+						}
+					},
+
+					//IC发货单检验
+					toChangefahuodan(type) {
+						if (type == 1) {
+							window.location.href = 'InvoiceCheck.html'
+						} else if (type == 2) {
+							window.location.href = 'waferIODetail.html?'
+						}
+					},
+					//测试前烘烤
+					toChangeOpers(type) {
+						window.location.href = 'testBeforeBake.html?type=' + type
+					},
+					//测试前烘烤
+					toChangeCheck(type) {
+						if (type == 1) {
+							window.location.href = 'LabelCheck.html'
+						} else if (type == 2) {
+							window.location.href = 'exboard.html'
+						} else if (type == 3) {
+							window.location.href = 'driverRepair.html?type=' + 1
+						} else if (type == 4) {
+							window.location.href = 'driverRepair.html?type=' + 2
+						}
+
+					},
+					onConfirm: function() {
+						var self = this;
+						switch (this.menuType) {
+							case 1:
+								if (this.Barcode == undefined || this.Barcode == '') {
+									self.$toast('请先输入卡号或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/autohand',
+									type: 'GET',
+									data: {
+										cardID: self.Barcode,
+										userID: localStorage.userCode
+										//							_t: new Date().getTime()
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											window.location.href = 'smartCard.html?cardID=' + self
+												.Barcode
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 2: //智能刷卡
+
+								window.location.href = 'splitCard.html'
+								break;
+							case 3:
+								window.location.href = 'togetherCard.html'
+								break;
+							case 4: //成品入库
+								window.location.href = 'entryHouse.html?type=1'
+								break;
+							case 5: //成品出库
+								window.location.href = 'entryHouse.html?type=2'
+								break;
+							case 6: //工卡查询
+								if (this.Barcode == undefined || this.Barcode == '') {
+									self.$toast('请先输入卡号或扫描条码！');
+									return
+								}
+								window.location.href = 'cardDetail.html?cardID=' + self.Barcode
+								break;
+							case 7: //扣押
+								if (this.Barcode == undefined || this.Barcode == '') {
+									self.$toast('请先输入卡号或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/checkcard', //检测工卡
+									type: 'GET',
+									data: {
+										cardID: self.Barcode,
+										userID: localStorage.userCode
+										//_t: new Date().getTime()
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											window.location.href = 'detain.html?cardID=' + self.Barcode
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 9: //退回
+								if (this.Barcode == undefined || this.Barcode == '') {
+									self.$toast('请先输入卡号或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/checkcard', //检测工卡
+									type: 'GET',
+									data: {
+										cardID: self.Barcode,
+										userID: localStorage.userCode
+										//							_t: new Date().getTime()
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											window.location.href = 'cardReturn.html?cardID=' + self
+												.Barcode
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 17: //线边库入库
+								if (this.warehouse == undefined || this.warehouse == '') {
+									self.$toast('请先选择仓库！');
+									return
+								}
+								window.location.href = 'inoutWarehouse.html?type=1&storeCode=' + this.warehouse +
+									'&name=' + this.warehouseDisplay + '&storeType=' + this.warehouseType
+								break;
+							case 18: //线边库出库
+								if (this.warehouse == undefined || this.warehouse == '') {
+									self.$toast('请先选择仓库！');
+									return
+								}
+								window.location.href = 'inoutWarehouse.html?type=2&storeCode=' + this.warehouse +
+									'&name=' + this.warehouseDisplay + '&storeType=' + this.warehouseType
+								break;
+							case 19: //设备停机
+								if (this.Machinecode == undefined || this.Machinecode == '') {
+									self.$toast('请先输入设备码或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/getdownequipment', //检测设备
+									type: 'GET',
+									data: {
+										equipmentCode: self.Machinecode
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											window.location.href =
+												'pullForCheck.html?type=1&equipmentCode=' + self
+												.Machinecode
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 20: //设备复机
+								if (this.Machinecode == undefined || this.Machinecode == '') {
+									self.$toast('请先输入设备码或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/getdownequipment', //检测设备
+									type: 'GET',
+									data: {
+										equipmentCode: self.Machinecode
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											window.location.href =
+												'pullForCheck.html?type=2&equipmentCode=' + self
+												.Machinecode
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 21: //设备登修
+								if (this.Machinecode == undefined || this.Machinecode == '') {
+									self.$toast('请先输入设备码或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/getdownequipment', //检测设备
+									type: 'GET',
+									data: {
+										equipmentCode: self.Machinecode
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											window.location.href =
+												'pullForCheck.html?type=3&equipmentCode=' + self
+												.Machinecode
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 22: //设备质检
+								if (this.Machinecode == undefined || this.Machinecode == '') {
+									self.$toast('请先输入设备码或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/getdownequipment', //检测设备
+									type: 'GET',
+									data: {
+										equipmentCode: self.Machinecode
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											window.location.href =
+												'EquipmentQuality.html?equipmentCode=' + self
+												.Machinecode
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							case 8: //模具上下机
+								if (this.Machinecode == undefined || this.Machinecode == '') {
+									self.$toast('请先输入设备码或扫描条码！');
+									return
+								}
+								$.ajax({
+									url: serviceUrl + '/api/pda/getmjrecord', //检测设备
+									type: 'GET',
+									data: {
+										equipmentCode: self.Machinecode
+									},
+									beforeSend: function(XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									success: function(res) {
+										if (res.code == 200) {
+											if (res.date.MJ_Code == null) {
+												window.location.href =
+													'MJRecord.html?type=1&equipmentCode=' + self
+													.Machinecode
+											} else {
+												window.location.href =
+													'MJRecord.html?type=2&equipmentCode=' + self
+													.Machinecode
+											}
+										} else {
+											self.$toast(res.msg);
+										}
+									},
+									error: function() {
+										self.$toast('服务器错误');
+									}
+								})
+								break;
+							default:
+								break;
+						}
+
+					},
+					onCloseMachine(action, done) {
+						if (action === "confirm") {
+							return done(false);
+						} else {
+							return done();
+							this.showMachine = false
+						}
+					},
+					onCloseWarehouse(action, done) {
+						if (action === "confirm") {
+							return done(false);
+						} else {
+							return done();
+							this.showWarehouse = false
+						}
+					},
+					showPopup() {
+						this.showPicker = true;
+						this.getLineStores();
+					},
+					onConfirmPopup(value) {
+						this.warehouse = value.storeCode;
+						this.warehouseDisplay = value.storeName;
+						this.warehouseType = value.storeType;
+						this.showPicker = false;
+					},
+					//获取仓库接口
+					getLineStores: function() { //获取缺陷列表
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/querylinestores',
+							type: 'GET',
+							data: {},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									self.columns = res.data;
+
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器错误');
+							}
+						})
+					},
+
+				}
+			})
+		</script>
+		<style>
+			.button-container {
+				width: 80%;
+				margin: 20px auto;
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
+				flex-wrap: wrap;
+			}
+
+			.custom-button {
+				width: 45%;
+				margin: 0 0 10px;
+				border: 1px solid #ddd;
+				border-radius: 5px;
+				color: #fff;
+				font-weight: bold;
+				transition: background-color 0.3s, box-shadow 0.3s;
+			}
+
+			.custom-button.full-width {
+				width: 100%;
+			}
+
+			.button-1 {
+				background-color: #3498db;
+			}
+
+			.button-1:hover {
+				background-color: #2980b9;
+			}
+
+			.button-2 {
+				background-color: #e74c3c;
+			}
+
+			.button-2:hover {
+				background-color: #c0392b;
+			}
+
+			.button-3 {
+				background-color: #2ecc71;
+			}
+
+			.button-3:hover {
+				background-color: #27ae60;
+			}
+
+			.button-4 {
+				background-color: #f39c12;
+			}
+
+			.button-6 {
+				background-color: #0055ff;
+			}
+
+			.button-7 {
+				background-color: #aa557f;
+			}
+
+			.button-4:hover {
+				background-color: #e67e22;
+			}
+
+			.button-5 {
+				background-color: #9b59b6;
+			}
+
+			.button-5:hover {
+				background-color: #8e44ad;
+			}
+
+			.custom-button:active {
+				box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+			}
+
+			.dialog-header {
+				display: flex;
+				justify-content: space-around;
+				align-items: center;
+			}
+		</style>
+	</body>
+
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>箱号与货架号绑定</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app" v-cloak>
+		<div>
+			<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<div>
+				<van-field v-model="locationCode" label="货架号" input-align="right" placeholder="请输入或扫描货架号"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1" error-message-align="right"/>
+			</div>
+			<div>
+				<van-field v-model="boxCode" label="箱号" input-align="right" placeholder="请输入或扫描货箱号"
+					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2" error-message-align="right"/>
+			</div>
+			<van-cell-group title="已扫绑定信息">
+				<div class="confirm_dellist">
+					<div class="list_has_del" v-for="(item,index) in boxCodes">
+						<span>{{index+1}}、箱号：{{item}}</span>
+						<div class="list_has_del_r">
+							<span class="del_btn" @click="onDelete(index)">删除</span>
+						</div>
+					</div>
+				</div>
+				<!-- <van-empty image="search" description="未找到工卡" v-else /> -->
+			</van-cell-group>
+			<!-- <div>
+				<van-cell value="已扫临时标签" />
+			</div>
+			 -->
+		</div>
+
+		<div class="btm_btn">
+			<van-row>
+				<van-col span="10">
+					<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+				</van-col>
+				<van-col span="14">
+					<van-button type="info" block square @click="save">确认</van-button>
+				</van-col>
+			</van-row>
+		</div>
+
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				showScan: false,
+				Barcode: '',
+				title: '箱号绑定',
+		/* 		labels: [],//已扫临时标签
+				cardID: '',//工卡
+				labelCode: '',//标签 */
+				
+				boxCodes: [],//已扫箱号
+				locationCode: '',//货架号
+				boxCode: '',//箱号
+				
+				errorMsg1: "",
+				errorMsg2: "",
+			},
+			//封装好的方法挂载到mounted里面
+			mounted: function (data) {
+				window.scanCode = this.scanCode;
+			},
+			created() {
+			},
+			methods: {
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//出入库提交
+				save: function () {
+					var self = this;
+					var param = {
+						locationCode: self.locationCode,
+						boxCodes: self.boxCodes,
+						modifyUser: localStorage.userCode,
+						modifyUserName: localStorage.userName
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认提交?',
+					}).then(function () {
+						$.ajax({
+							url: serviceUrl + '/api/pda/bindboxCodes',
+							type: 'POST',
+							data: param,
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function (XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function (res) {
+								if (res.code == 200) {
+									self.$dialog.alert({
+										title: '提示',
+										message: '操作成功!'
+									}).then(function () {
+										self.locationCode = '';
+										self.errorMsg1 = '';
+										self.boxCode = '';
+										self.boxCodes = [];
+										self.$refs.filed1.focus();
+									})
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function () {
+								self.$toast('服务器错误！');
+							}
+						})
+					}).catch(function () {
+						// on cancel
+					});
+				},
+	
+				//重置
+				reset: function () {
+					var self = this;
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认重置?',
+					}).then(function () {
+						self.locationCode = '';
+						self.errorMsg1 = '';
+						self.boxCode = '';
+						self.boxCodes = [];
+						self.$refs.filed1.focus();
+					}).catch(function () {
+						// on cancel
+					});
+				},
+	
+				//是否触发回车	
+				onEnter: function (type) {
+					var self = this;
+					switch (type) {
+						case 1: //工卡			
+							if (this.locationCode) {
+								self.boxCodes = []
+								/* $.ajax({
+									url: serviceUrl + '/api/pda/getcardlabels',
+									type: 'GET',
+									data: {
+										cardID: self.locationCode
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										if (res.code == 200) {
+											self.errorMsg1 = ''
+											if (res.data) {
+												var list = res.data;
+												for (var i = 0; i < list.length; i++) {
+													const element = list[i];
+													self.boxCodes.push(element.code)
+												}
+											}
+											self.$toast('工卡校验成功');
+											self.onFocus(type);
+										} else {
+											self.errorMsg1 = '找不到对应的工卡'
+											self.$toast(res.msg);
+										}
+									},
+									error: function () {
+										self.errorMsg1 = '找不到对应的工卡'
+										self.$toast('服务器错误');
+									}
+								}) */
+								self.onFocus(type);
+							}
+							break;
+						case 2: //标签	
+							if (self.locationCode == undefined || self.locationCode == '') {
+								self.$toast('请先输入或扫描货架号');
+								self.boxCode = '';
+								return;
+							}
+							if (self.boxCodes) {
+								$.ajax({
+									url: serviceUrl + '/api/pda/getBoxCode',
+									type: 'GET',
+									data: {
+										boxCode: self.boxCode,
+										locationCode: self.locationCode
+									},
+									contentType: "application/x-www-form-urlencoded",
+									dataType: 'json',
+									beforeSend: function (XMLHttpRequest) {
+										XMLHttpRequest.setRequestHeader("token", localStorage.token);
+										XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+									},
+									success: function (res) {
+										var isTips = false;
+										if (res.code != 200) {
+											self.$toast(res.msg);
+										} else {
+											self.addLable();
+										}
+										self.boxCode = ''
+									},
+									error: function () {
+									}
+								})
+							}
+	
+	
+							break;
+						default:
+							break;
+					}
+				},
+	
+				//添加标签，私有方法
+				addLable: function () {
+					var self = this
+					var isExist = false;
+					for (var index = 0; index < self.boxCodes.length; index++) {
+						var element = self.boxCodes[index];
+						if (element == self.boxCode) {
+							isExist = true;
+							break;
+						}
+					}
+					if (!isExist) {
+						self.boxCodes.push(self.boxCode)
+					} else {
+						self.$toast('已扫描过相同箱号');
+					}
+				},
+	
+				//自动触发焦点聚焦
+				onFocus: function (type) {
+					var self = this;
+					if (type == 1) {
+						self.$refs.filed2.focus();
+					} else if (type == 2) {
+						// self.$refs.filed2.blur();
+					}
+				},
+	
+				//删除
+				onDelete: function (index) {
+					var self = this;
+					self.boxCodes.splice(index, 1)
+				},
+	
+				scanCode: function (data) { //监听扫码事件
+					var codedata = JSON.parse(data);
+					this.Barcode = codedata.Barcode;
+					if (this.menuType == 1) { //仓位
+	
+					} else if (this.menuType == 2) {//物料
+	
+					}
+				},
+				onClose: function (action, done) {
+					if (action === "confirm") {
+						return done(false);
+					} else {
+						return done();
+						this.showScan = false
+					}
+				},
+	
+			}
+		})
+	</script>
+</body>
+
+</html>

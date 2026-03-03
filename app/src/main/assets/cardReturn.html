@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+	<meta content="black" name="apple-mobile-web-app-status-bar-style">
+	<meta content="telephone=no" name="format-detection">
+	<title>工卡退回</title>
+	<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+	<script src="js/jquery.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/vant.min.js"></script>
+	<script src="js/common.js"></script>
+	<link rel="stylesheet" href="styles/style.css" />
+	<!-- 引入样式文件 -->
+	<link rel="stylesheet" href="styles/vant.css" />
+</head>
+
+<body>
+	<div id="app"  v-cloak>
+		<div>
+			<van-nav-bar title="工卡退回" left-arrow left-text="返回" @click-left="backLast" />
+		</div>
+		<div>
+			<van-cell title="工卡卡号" v-model="cardID" />
+		</div>
+		<div>
+			<van-cell title="当前工步" v-model="basicForm.curStep" />
+		</div>
+		<div>
+			<van-cell title="上一工步" v-model="basicForm.nextStep" />
+		</div>
+		<div>
+			<van-cell title="当前状态" v-model="basicForm.statusText" />
+		</div>
+		<div>
+			<van-cell title="当前数量" v-model="basicForm.curNum" />
+		</div>
+		<van-collapse v-model="activeNames" style="margin: 10px 0 0;">
+			<van-collapse-item title="产品信息" name="1">
+				<div>
+					<van-cell title="产品编码" v-model="basicForm.partNumber" />
+				</div>
+				<div>
+					<van-cell title="产品型号" v-model="basicForm.pModel" />
+				</div>
+				<div>
+					<van-cell title="客户批次" v-model="basicForm.dieBatch" />
+				</div>
+				<div>
+					<van-cell title="客户代码" v-model="basicForm.customerCode" />
+				</div>
+				<div>
+					<van-cell title="封装形式" v-model="basicForm.packageCode" />
+				</div>
+				<div>
+					<van-cell title="工单单号" v-model="basicForm.workOrder" />
+				</div>
+				<div>
+					<van-cell title="工序编码" v-model="basicForm.stationCode" />
+				</div>
+				<div>
+					<van-cell title="工序名称" v-model="basicForm.stationName" />
+				</div>
+			</van-collapse-item>
+		</van-collapse>
+		<div class="btm_btn">
+			<van-button type="info" block square @click="cardreturn">退回</van-button>
+		</div>
+	</div>
+	<script>
+		new Vue({
+			el: '#app',
+			data: {
+				userName: localStorage.userName ? localStorage.userName : '',
+				cardID: '',
+				activeNames:['1'],
+				basicForm: {},
+			},
+			created: function () {
+				var cardID = getQueryVariable('cardID');
+				this.cardID = cardID ? cardID : '';
+				this.getCardDetail()
+			},
+			methods: {
+				//返回上一页
+				backLast: function () {
+					window.location.href = "javascript:history.go(-1)";
+				},
+				//获取工卡明细
+				getCardDetail: function () {
+					var self = this;
+					$.ajax({
+						url: serviceUrl + '/api/pda/getcard',
+						type: 'GET',
+						data: {
+							cardID: self.cardID,
+							userID: localStorage.userCode
+						},
+						contentType: "application/x-www-form-urlencoded",
+						dataType: 'json',
+						beforeSend: function (XMLHttpRequest) {
+							XMLHttpRequest.setRequestHeader("token", localStorage.token);
+							XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+						},
+						success: function (res) {
+							if (res.code == 200) {
+								self.basicForm = res.data;
+							} else {
+								self.$toast(res.msg);
+							}
+						},
+						error: function () {
+							self.$toast('服务器错误');
+						}
+					})
+				},
+				//退回
+				cardreturn: function () {
+					var self = this;
+					var saveData = {
+						cardID: self.cardID,//--工卡ID
+						userID: localStorage.userCode,
+						type: 7,
+						curNum: self.basicForm.curNum, //-- 当前数量
+						stationCode: self.basicForm.stationCode,//--工序编码
+						curStepCode: self.basicForm.curStepCode, //-- 工步编码
+						handler: localStorage.userCode,
+						handlerName: localStorage.userName
+					}
+					self.$dialog.confirm({
+						title: '提示',
+						message: '是否确认退回?',
+					})
+						.then(function () {
+							// on confirm
+							$.ajax({
+								url: serviceUrl + '/api/pda/cardoperation',
+								type: 'POST',
+								data: saveData,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function (XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+								},
+								success: function (res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										})
+											.then(function () {
+												self.backLast();
+											})
+
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function () {
+									self.$toast('服务器错误！');
+								}
+							})
+						})
+						.catch(function () {
+							// on cancel
+						});
+
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>
