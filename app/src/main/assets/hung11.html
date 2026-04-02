@@ -41,14 +41,10 @@
 					required @keyup.enter.native="onEnter(1)" />
 			</div>
 			<div>
-				<van-field disabled v-model="package" label="封装类型" input-align="right" placeholder="请输入"
-					@keyup.enter.native="onEnter(1)" ref="filed1" :error-message="errorMsg1"
-					error-message-align="right" />
+				<van-field disabled v-model="package" label="封装类型" input-align="right" placeholder="请输入" />
 			</div>
 			<div>
-				<van-field disabled v-model="pModel" label="产品型号" input-align="right" placeholder="请输入"
-					@keyup.enter.native="onEnter(1)" ref="filed1" :error-message="errorMsg1"
-					error-message-align="right" />
+				<van-field disabled v-model="pModel" label="产品型号" input-align="right" placeholder="请输入" />
 			</div>
 
 
@@ -558,7 +554,7 @@
 									self.materialContent = res.data.cardInfo.CardID;
 									self.locationCode = res.data.cardInfo.EquipmentCode;
 									self.intime = res.data.cardInfo.GenerationTime
-									self.outtime=res.data.operationRecords1[0].OperationTime
+									self.outtime = res.data.operationRecords1[0].OperationTime
 									self.CurrentQuantity
 									console.log(self.numberOfSample);
 								} else {

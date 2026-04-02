@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>设备状态监控</title>
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<link rel="stylesheet" href="styles/vant.css" />
+		<style>
+			/* 异常状态红色样式 */
+			.status-error {
+				color: #ff3333 !important;
+				font-weight: bold;
+			}
+
+			.list_has_del {
+				padding: 12px 15px;
+				border-bottom: 1px solid #f2f2f2;
+				position: relative;
+			}
+
+			.list_has_del_r {
+				position: absolute;
+				right: 15px;
+				top: 50%;
+				transform: translateY(-50%);
+			}
+
+			.del_btn {
+				color: #1989fa;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="app" v-cloak>
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+
+			<div>
+				<van-cell-group title="设备清洗状态列表">
+					<div class="confirm_dellist">
+						<!-- 循环展示设备状态 -->
+						<div class="list_has_del" v-for="(item, index) in Device_List">
+							<span :class="item.status_flag == 1 ? 'status-error' : ''">
+								{{index+1}}、设备编码：{{item.EquCode}}
+								<br />设备名称：{{item.EquipmentName}}
+								<br />最后时间：{{item.Time}}
+								<br />最后结果：{{item.Judgment}}
+							</span>
+							<div class="list_has_del_r">
+								<span class="del_btn" @click="onCheck(item)">查看</span>
+							</div>
+						</div>
+				
+						<!-- 无数据提示 -->
+						<div style="text-align:center; padding:20px; color:#999" v-if="Device_List.length == 0">
+							暂无设备数据
+						</div>
+					</div>
+				</van-cell-group>
+				
+			</div>
+			<div class="btm_btn">
+				
+			
+					<van-button type="info" size="large" block square @click="reset">跳过</van-button>
+		
+			</div>
+		</div>
+
+		<script>
+			new Vue({
+				el: '#app',
+				data: {
+					title: '清洗机设备状态',
+					Device_List: [] // 设备状态列表
+				},
+				created() {
+					this.getDeviceStatus(); // 页面加载自动请求数据
+				},
+				methods: {
+					//重置
+					reset: function() {
+						// const type = 'someValue'; // 设置 `type` 的值
+						window.location.href = 'FirstInspection6.html';
+					},
+					// 返回
+					backLast: function() {
+						history.go(-1);
+					},
+
+					// 获取后端接口数据（你之前SQL查询的结果）
+					getDeviceStatus: function() {
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCleanDeviceStatus', // 你的后端接口地址
+							type: 'GET',
+							dataType: 'json',
+							beforeSend: function(request) {
+								request.setRequestHeader("token", localStorage.token);
+								request.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									// 把后端返回的SQL数据赋值给列表
+									console.log(res.data);
+									self.Device_List = res.data;
+								} else {
+									self.$toast(res.msg);
+								}
+							},
+							error: function() {
+								self.$toast('服务器连接失败');
+							}
+						})
+					},
+
+					// 点击查看/处理
+					onCheck: function(item) {
+						// 跳转到详情页 可自行修改
+						window.location.href = 'FirstInspection6.html?EquipmentCode=' + item.EquCode;
+					}
+				}
+			})
+		</script>
+	</body>
+
+</html>

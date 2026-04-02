@@ -124,7 +124,7 @@
 					<!-- 备品备件 -->
 					<li @click="showSpareOut=true"><img src="images/main_icon51.png" /></li>
 					<!-- 温湿度 -->
-					<li v-if="menuPowers.menu_dianjian"><a href="THInspection.html"><img src="images/main_icon52.png" /></a></li>
+					<li v-if="menuPowers.menu_dianjian" @click="showChangeAQTH=true"><img src="images/main_icon52.png" /></a></li>
 					<!-- 改机 -->
 					<li ><a href="deviceRemould.html"><img src="images/main_icon53.png" /></a></li>
 					<li ><a href="daigaiji.html"><img src="images/main_icon54.png" /></a></li>
@@ -195,6 +195,20 @@
 							type="default">物料</van-button>
 						<van-button @click="toChangeLinestores(4)" style="width:100%;" plain hairline
 							type="default">测试</van-button>
+					</div>
+				</van-dialog>
+			</div>
+			
+			
+			<div>
+				<van-dialog title="请选择点检类型" v-model="showChangeAQTH" show-cancel-button
+					:show-confirm-button="false">
+					<div style="width: 80%;margin:20px auto;">
+						<van-button @click="toChangeAQTH(1)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">温湿度点检</van-button>
+						<van-button @click="toChangeAQTH(2)" style="width:100%;margin:0 0 10px" plain hairline
+							type="default">空气质量点检</van-button>
+					
 					</div>
 				</van-dialog>
 			</div>
@@ -295,6 +309,9 @@
 					<div style="width: 80%;margin:20px auto;">
 						<van-button @click="toSpareOut(1)" class="custom-button button-2">备品备件领用</van-button>
 						<van-button @click="toSpareOut(2)" class="custom-button button-1">测试片领用</van-button>
+						<van-button @click="toSpareOut(3)" class="custom-button button-3">注塑框架领用</van-button>
+						<van-button @click="toSpareOut(4)" class="custom-button button-4">注塑框架归还</van-button>
+						<van-button @click="toSpareOut(5)" class="custom-button button-5">前工序夹治具更换记录表</van-button>
 					</div>
 				</van-dialog>
 			</div>
@@ -355,6 +372,8 @@
 							<van-button @click="toChangeFirst(7)"
 								class="custom-button button-7">焊线站过站产品外观检验</van-button>
 							<van-button @click="toChangeFirst(8)" class="custom-button button-5">焊片站芯片空洞检测</van-button>
+							<van-button @click="toChangeFirst(9)" class="custom-button button-1">IC塑封工艺参数</van-button>
+							
 						</div>
 					</div>
 
@@ -411,6 +430,7 @@
 					menuPowers: {},
 					showcheckStockType: false,
 					showChangeLinestores: false,
+					showChangeAQTH: false,
 					showChangeOpers: false,
 					showChangehung: false,
 					showChangeCheck: false,
@@ -535,6 +555,14 @@
 							window.location.href = 'hung7.html'
 						}
 					},
+					
+					toChangeAQTH(type) {
+						if (type == 1) {
+							window.location.href = 'THInspection.html'
+						} else if (type == 2) {
+							window.location.href = 'AQInspection.html'
+						}
+					},
 					//测试前烘烤
 					toChangeFirst(type) {
 						if (type == 1) {
@@ -548,11 +576,13 @@
 						} else if (type == 5) {
 							window.location.href = 'FirstInspection5.html'
 						} else if (type == 6) {
-							window.location.href = 'FirstInspection6.html'
+							window.location.href = 'shuidiliebiao.html'
 						} else if (type == 7) {
 							window.location.href = 'FirstInspection7.html'
 						} else if (type == 8) {
 							window.location.href = 'FirstInspection8.html'
+						} else if (type == 9) {
+							window.location.href = 'ICMoldingStationProcessParameterChecklist.html'
 						}
 					},
 
@@ -637,6 +667,12 @@
 							window.location.href = 'spareIO2.html'
 						} else if (type == 2) {
 							window.location.href = 'spareIO.html'
+						}else if (type == 3) {
+							window.location.href = 'ICInjectionMoldingFrameUseRecord.html?type=' + 1
+						}else if (type == 4) {
+							window.location.href = 'ICInjectionMoldingFrameUseRecord.html?type=' + 2
+						}else if (type == 5) {
+							window.location.href =  'ICPreProcessFixtureBorrowReturn.html'
 						}
 					},
 

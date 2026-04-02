@@ -38,7 +38,7 @@
 			</div>
 			<div id='no'>
 				<van-field v-model="locationCode" label="机台号" input-align="right" placeholder="请输入或扫描设备" ref="filed0"
-					required :error-message="errorMsg1" error-message-align="right" autofocus
+					required :error-message="errorMsg1" enterkeyhint="enter" error-message-align="right" autofocus
 					@keyup.enter.native="onEnter(1)" />
 			</div>
 			<div class='no'>
@@ -47,7 +47,7 @@
 			</div>
 			<div>
 				<van-field v-model="materialContent" label="工卡号" input-align="right" placeholder="请输入或扫描工卡号"
-					@keyup.enter.native="onEnter(2)" ref="filed2" required :error-message="errorMsg2"
+					@keydown.enter.native.prevent="onEnter(2)" enterkeyhint="enter" ref="filed2" required :error-message="errorMsg2"
 					error-message-align="right" />
 			</div>
 			<div v-if="stationName=='贴片工序'">
@@ -61,15 +61,20 @@
 				</van-field>
 			</div>
 			<div>
-				<van-field disabled v-model="partName" label="产品型号" input-align="right" placeholder="请输入"
+				<van-field disabled v-model="partName" label="产品名称" input-align="right" placeholder="请输入"
+					error-message-align="right" />
+			</div>
+			<div>
+				<van-field disabled v-model="PModel" label="产品型号" input-align="right" placeholder="请输入"
 					error-message-align="right" />
 			</div>
 			<div>
 				<van-field v-model="TBA" label="剔除时间" input-align="right" placeholder="请输入"
-					@keyup.enter.native="onEnter(3)" required error-message-align="right" :error-message="errorMsg3" />
+					@keyup.enter.native="onEnter(3)" enterkeyhint="enter" required error-message-align="right"
+					:error-message="errorMsg3" />
 			</div>
 			<div>
-				<van-field disabled v-model="UPH" label="UPH" input-align="right" error-message-align="right" />
+				<van-field :disabled="uphdisable" v-model="UPH" label="UPH" input-align="right" @keyup.enter.native="onEnter(4)" enterkeyhint="enter" />
 			</div>
 
 
@@ -86,7 +91,7 @@
 
 
 			<div class='no'>
-				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入" ref="filed1" />
+				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入" />
 			</div>
 
 			<div class="btm_btn">
@@ -121,7 +126,7 @@
 					numberOfSample: 0,
 
 
-
+					uphdisable:true,
 					userCode: '',
 					userName: '',
 					stationName: '',
@@ -136,18 +141,20 @@
 					theoreticalCapacity: 0,
 					actualCapacity: 0,
 					dieTpye: '',
-					options: [{
+					options: [
+						{
 							text: '型号1',
 							value: 'model1',
 							pinNumber: 1
 						},
-			 			{
+						{
 							text: '型号2',
 							value: 'model2',
 							pinNumber: 1
 						}
 					],
-					equipmentModel: ''
+					equipmentModel: '',
+					PModel: ''
 
 				},
 				//封装好的方法挂载到mounted里面
@@ -195,6 +202,9 @@
 									self.supplierName = res.data.equ_Equipment.SupplierName;
 									// self.stationType = res.data.equ_Equipment.StationType;
 									self.equipmentModel = res.data.equ_Equipment.Equipmentmodel;
+									if(res.data.stationCode=="贴片工序"){
+										self.uphdisable=false
+									}
 								} else {
 									self.$toast(res.msg);
 								}
@@ -377,6 +387,7 @@
 									self.errorMsg2 = ''
 									self.partName = res.data.cardInfo.PartName
 									self.package = res.data.cardInfo.PackageCode
+									self.PModel = res.data.cardInfo.PModel
 									self.options = res.data.options
 								} else {
 									self.$toast(res.msg);

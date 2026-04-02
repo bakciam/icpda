@@ -51,7 +51,7 @@
 					:error-message="errorMsg1" error-message-align="right" />
 			</div>
 
-			<!-- 	<div style="display: flex; align-items: center; width: 100%;">
+			<!-- <div style="display: flex; align-items: center; width: 100%;">
 				<van-field style="flex: 0 0 90%" v-model="boxCode" label="容器号" :readonly="isRead" input-align="right"
 					placeholder="请扫描容器号" ref="filed1" :error-message="errorMsg1" @click="stopKeyborad"
 					error-message-align="right">
@@ -376,11 +376,11 @@
 					save: function() {
 						var self = this;
 						if (self.sBoxCode != self.boxCode) {
-							if(self.remark!='XBZ'){
+							if (self.remark != 'XBZ') {
 								this.$toast('请确认流转容器号是否一致,' + self.sBoxCode);
 								return
 							}
-							
+
 						}
 						var param = {
 							cardID: self.materialContent,

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC注塑框架领用归还记录</title>
+		<!-- 引入依赖 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div class='form-item'>
+				<van-field v-model="projectName" label="封装形式" input-align="right" placeholder="请输入" ref="filed1" required
+					:error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<!-- 修复：闭合 van-field 标签 -->
+			<div v-if="type=='1'">
+				<van-field label="班别" input-align="right">
+					<template #input>
+						<van-radio-group v-model="batchNo" direction="horizontal">
+							<van-radio name="白">白</van-radio>
+							<van-radio name="夜">夜</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field> <!-- 新增闭合标签 -->
+			</div>
+			<div class='form-item'> <!-- 修复：统一 class 名，去掉重复 id -->
+				<van-field v-model="tableCode" label="设备编码" input-align="right" placeholder="请输入或扫描" ref="filed3"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div v-if="type=='1'">
+				<van-field v-model="usageName" label="领用人" input-align="right" placeholder="请输入或扫描工号" ref="filed4" />
+			</div>
+			<div class='form-item' v-if="type=='1'">
+				<van-field v-model="sampleNo" label="框架型号" input-align="right" placeholder="请输入样本号" ref="filed5"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div v-if="type=='1'">
+				<van-field v-model="usageQty" :label-width="100" label="领用数量（片）" input-align="right" placeholder="请输入"
+					ref="filed6" />
+			</div>
+			<div v-if="type=='1'">
+				<van-field readonly clickable name="picker" input-align="right" :value="usageReason" label="领用原因"
+					placeholder="点击选择类型" @click="showPicker = true" />
+			</div>
+			<div class='form-item' v-if="type=='2'">
+				<div>
+					<van-field v-model="backQty" :label-width="150" label="归还数量确认（片）" input-align="right"
+						placeholder="请输入" />
+				</div>
+				<div>
+					<van-field v-model="NGReason" label="NG原因" input-align="right" placeholder="请输入" />
+					
+				</div>
+				<div>
+					<van-field v-model="backerName" :label-width="100" label="确认人" input-align="right" placeholder="请输入" />
+				</div>
+			</div>
+			<div class='form-item'>
+				<van-field v-model="remark" label="备注" input-align="right" placeholder="请输入"
+					error-message-align="right" />
+			</div>
+			<div class="btm_btn">
+				<van-popup v-model="showPicker" position="bottom">
+					<van-picker show-toolbar :columns="columns" @confirm="onConfirm" @cancel="showPicker = false" />
+				</van-popup>
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+		</div>
+		<script>
+			// 确保 Vant 组件全局注册（适配 Vant 2）
+			const {
+				Dialog,
+				Toast,
+				Field,
+				RadioGroup,
+				Radio,
+				NavBar,
+				Popup,
+				Picker,
+				Button,
+				Row,
+				Col
+			} = vant;
+			Vue.use(Field).use(RadioGroup).use(Radio).use(NavBar).use(Popup).use(Picker).use(Button).use(Row).use(Col);
+			Vue.prototype.$dialog = Dialog;
+			Vue.prototype.$toast = Toast;
+
+			new Vue({
+				el: '#app',
+				data: {
+					type: '1',
+					btnName: '确认',
+					projectName: '',
+					sampleNo: '',
+					batchNo: '',
+					tableCode: '',
+					usageCode: '',
+					usageQty: '',
+					usageReason: '',
+					remark: '',
+					errorMsg1: "",
+					errorMsg2: "",
+					tag: "",
+					title: '',
+					NGReason: '',
+					showPicker: false,
+					usageName: '',
+					backQty: '',
+					backerName: '',
+					columns: ['清模使用', '结批使用', '工程调试设备使用', '工艺验证使用', 'NPI使用', '品质测量错位使用'],
+				},
+				mounted: function() {
+					
+					
+					if(this.type==1){
+						this.usageCode = localStorage.userCode || '';
+						this.usageName = localStorage.userName || '';
+					}
+					else{
+						backerName= localStorage.userName || '';
+					}
+				},
+				created() {
+					this.title = 'IC注塑框架领用记录';
+					// 修复：统一 type 赋值逻辑，确保为字符串类型
+					const type = getQueryVariable('type');
+					this.type = type ? String(type) : '1'; // 强制转为字符串
+					// 根据 type 切换标题和按钮文字
+					if (this.type === '2') {
+						this.title = 'IC注塑框架归还记录';
+						this.btnName = '确认归还';
+					}
+				},
+				methods: {
+					onConfirm(value) {
+						this.usageReason = value;
+						this.showPicker = false;
+					},
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+					// 提交（优化验证逻辑）
+					save: function() {
+						const self = this;
+						// 基础必填项验证
+						const baseRequired = [{
+								key: 'projectName',
+								msg: '项目'
+							},
+							{
+								key: 'tableCode',
+								msg: '设备编码'
+							}
+						];
+						// 领用场景额外验证
+						const useRequired = [{
+								key: 'batchNo',
+								msg: '班别'
+							},
+							{
+								key: 'sampleNo',
+								msg: '框架型号'
+							},
+							{
+								key: 'usageQty',
+								msg: '领用数量'
+							},
+							{
+								key: 'usageReason',
+								msg: '领用原因'
+							}
+						];
+						// 归还场景额外验证
+						const backRequired = [{
+								key: 'backQty',
+								msg: '归还数量'
+							},
+							{
+								key: 'backerName',
+								msg: '确认人'
+							}
+						];
+
+						// 合并验证规则
+						let requiredList = [...baseRequired];
+						if (self.type === '1') {
+							requiredList = [...requiredList, ...useRequired];
+						} else if (self.type === '2') {
+							requiredList = [...requiredList, ...backRequired];
+						}
+
+						// 执行验证
+						const emptyField = requiredList.find(item => !self[item.key]);
+						if (emptyField) {
+							self.$dialog.alert({
+								title: '错误',
+								message: `请输入${emptyField.msg}（必填项）`,
+							});
+							return;
+						}
+
+						// 构造提交参数（包含归还场景参数）
+						const param = {
+							projectName: self.projectName,
+							batchNo: self.batchNo,
+							tableCode: self.tableCode,
+							usageCode: self.usageCode,
+							usageName: self.usageName,
+							sampleNo: self.sampleNo,
+							usageQty: self.usageQty,
+							usageReason: self.usageReason,
+							remark: self.remark,
+							NGReason: self.NGReason,
+							backQty: self.backQty,
+							backerName: self.backerName,
+							type: self.type // 新增：提交场景类型
+						};
+
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/PostIcMoldingFrameUseRecord',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage
+										.token || '');
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret || '');
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											self.reset();
+										});
+									} else {
+										self.$toast(res.msg || '提交失败');
+									}
+								},
+								error: function() {
+									self.$toast('网络异常，请稍后重试');
+								}
+							});
+						}).catch(function() {
+							// 取消提交
+						});
+					},
+					// 重置
+					reset: function() {
+						const self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+							self.projectName = '';
+							self.batchNo = '';
+							self.tableCode = '';
+							self.usageCode = '';
+							self.sampleNo = '';
+							self.usageQty = '';
+							self.usageReason = '';
+							self.remark = '';
+							self.NGReason = '';
+							self.backQty = '';
+							self.backerName = '';
+							self.errorMsg1 = '';
+							self.errorMsg2 = '';
+						});
+					},
+					onEnter: function(type) {
+						const self = this;
+						switch (type) {
+							case 1:
+								self.onFocus(type);
+								break;
+						}
+					},
+					onFocus: function(type) {
+						const self = this;
+						if (type == 1 && self.$refs.filed3) {
+							self.$refs.filed3.focus();
+						}
+					}
+				}
+			});
+			Vue.config.devtools = true;
+		</script>
+		<style>
+			.form-item {
+				/* 统一表单项样式类名 */
+				margin-bottom: 10px;
+			}
+
+			.btm_btn {
+				margin-top: 20px;
+				padding: 0 10px;
+			}
+
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+</html>

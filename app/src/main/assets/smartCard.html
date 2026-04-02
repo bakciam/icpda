@@ -212,9 +212,19 @@
 							<van-field v-model="subCardCode" label="成型条形码" input-align="right" placeholder="请输入或扫描物料条形码"
 								ref="filed6" @keyup.enter.native="onFocus(0)" clearable />
 						</div>
-						<div>
+						<!-- 	<div>
 							<van-field v-model="subBoxCode" label="对应盒号" input-align="right" placeholder="请输入或扫描物料条形码"
 								@keyup.enter.native="onEnter(6)" ref="filed7" clearable />
+						</div> -->
+						<div style="display: flex; align-items: center; width: 100%;">
+							<van-field style="flex: 0 0 90%" v-model="subBoxCode" label="对应盒号" :readonly="isRead"
+								input-align="right" placeholder="请扫描容器号" :error-message="errorMsg1"
+								@click="stopKeyborad" error-message-align="right" @keyup.enter.native="onEnter(6)"
+								ref="filed7">
+
+							</van-field>
+							<van-button style="flex: 0 0 10%; border: none !important" block square
+								@click="onclearBoxCode">ⓧ</van-button>
 						</div>
 						<div class="confirm_dellist">
 							<div class="list_has_del" v-for="(item,index) in subCardCodes">
@@ -549,8 +559,9 @@
 					carryBoxCode: '',
 					txtpackageCode: '',
 					packageFlag: false,
-
-
+					isRead: false,
+					errorMsg1: '',
+					isOver12Hours: false
 				},
 				//封装好的方法挂载到mounted里面
 				mounted: function(data) {
@@ -562,6 +573,27 @@
 					this.getCardDetail()
 				},
 				methods: {
+					onclearBoxCode() {
+						this.subBoxCode = "";
+						this.isRead = false;
+					},
+					handleClear() {
+						// 清除后的回调（可选）
+						console.log('盒号已清空');
+						this.isRead = false
+						// 可以在这里重置错误提示等
+						this.errorMsg1 = '';
+					},
+					// 可阻止手机键盘弹出
+					stopKeyborad() {
+						this.isRead = true
+
+						setTimeout(() => {
+
+							this.isRead = false
+
+						}, 200);
+					},
 					backLast: function() {
 						window.location.href = "javascript:history.go(-1)";
 					},
@@ -731,6 +763,7 @@
 									self.subCardFlag = res.data.subCardFlag;
 									self.subCards = res.data.subCards;
 									self.testCount = res.data.testCount;
+									self.isOver12Hours = res.data.isOver12Hours;
 									console.log(res.data);
 								} else {
 									self.$toast(res.msg);
@@ -746,17 +779,27 @@
 						var self = this;
 						switch (type) {
 							case 1: //盒号
-								//判断当前盒号是否存在
+								// 核心：提取txtBoxCode中最后一个-后面的内容
+								let boxCode = self.txtBoxCode;
+								if (boxCode) {
+									// 找到最后一个-的位置，截取后面的内容
+									const lastHyphenIndex = boxCode.lastIndexOf('-');
+									if (lastHyphenIndex !== -1) {
+										boxCode = boxCode.slice(lastHyphenIndex + 1);
+									}
+								}
+
+								//判断当前盒号是否存在（使用处理后的boxCode）
 								var isExist = false;
 								for (var index = 0; index < self.boxCodes.length; index++) {
 									var element = self.boxCodes[index];
-									if (element == self.txtBoxCode) {
+									if (element == boxCode) { // 对比处理后的盒号
 										isExist = true;
 										break;
 									}
 								}
 								if (!isExist) {
-									self.boxCodes.push(self.txtBoxCode)
+									self.boxCodes.push(boxCode) // 存储处理后的盒号
 								} else {
 									self.$toast('已扫描过相同盒号');
 								}
@@ -1009,7 +1052,12 @@
 					onFocus: function(type) {
 						var self = this;
 						if (type == 0) {
-							self.$refs.filed7.focus();
+							// 判断 subCardCode 开头字符是否是 M（不区分大小写）
+							if (self.subCardCode.toString().trim().charAt(0).toUpperCase() === 'M') {
+								// 执行 onEnter(6) 方法
+								self.onEnter(6);
+							} else
+								self.$refs.filed7.focus();
 						} else if (type == 1) {
 							self.$refs.filed6.focus();
 						}
@@ -1182,7 +1230,7 @@
 
 
 					//操作 type // 1--进站 /// 2--上机 /// 3--出站 /// 4--测试出站 /// 5--完工
-					cardoperation: function(type) {
+					cardoperation:async  function(type) {
 						var self = this;
 						var type = this.cardoperationType;
 						var saveData = {
@@ -1193,6 +1241,11 @@
 							curStepCode: self.basicForm.curStepCode, //-- 工步编码
 							handler: localStorage.userCode,
 							handlerName: localStorage.userName
+						}
+						if (this.testCount == 0) {
+							self.$toast('请用pda进行测试板比对！');
+						
+							return;
 						}
 						var boxcode = '';
 						if (this.basicForm.boxFlag && self.boxCodes.length == 0) {
@@ -1239,14 +1292,7 @@
 							}
 
 						}
-						if (this.testCount == 0) {
-
-							self.$toast('请用pda进行测试板比对！');
-
-							return;
-
-
-						}
+						
 						if (this.basicForm.curStepCode == "121010") {
 							if (this.basicForm.IsTC == "2" || this.basicForm.IsTC == "3") {
 								self.$dialog.confirm({
@@ -1260,6 +1306,20 @@
 								});
 							}
 						}
+						// 1. 超时判断
+						if (this.isOver12Hours) {
+							try {
+								await self.$dialog.confirm({
+									title: '提示',
+									message: '产品已超时，是否已150°c烘烤8H，是否继续报工?',
+								});
+								// 点击确认 → 继续往下走
+							} catch (e) {
+								// 点击取消 → 直接终止，不执行任何后续代码
+								return;
+							}
+						}
+
 
 						if (this.basicForm.curStepCode == "130020") {
 							if (type == 2 && !this.packageFlag) {

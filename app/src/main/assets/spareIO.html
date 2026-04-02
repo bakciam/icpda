@@ -127,6 +127,11 @@
 						title: '提示',
 						message: '是否确认提交?',
 					}).then(function () {
+						self.$toast.loading({
+							message: '加载中...',
+							duration: 0,
+							forbidClick: true,
+						});
 						$.ajax({
 							url: serviceUrl + '/api/pda/outSpare',
 							type: 'POST',
@@ -138,11 +143,13 @@
 								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
 							},
 							success: function (res) {
+								self.$toast.clear()
 								if (res.code == 200) {
 									self.$dialog.alert({
 										title: '提示',
 										message: '操作成功!'
 									}).then(function () {
+										self.backLast();
 										self.equipmentCode = '';
 										self.errorMsg1 = '';
 										self.partNumber = '';
@@ -162,6 +169,7 @@
 								}
 							},
 							error: function () {
+								self.$toast.clear()
 								self.$toast('服务器错误！');
 							}
 						})

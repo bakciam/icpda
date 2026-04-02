@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+		<meta content="yes" name="apple-mobile-web-app-capable">
+		<meta content="black" name="apple-mobile-web-app-status-bar-style">
+		<meta content="telephone=no" name="format-detection">
+		<title>IC首检</title>
+		<!-- 引入 Vue 和 Vant 的 JS 文件 -->
+		<script src="js/jquery.min.js"></script>
+		<script src="js/vue.js"></script>
+		<!-- <script src="js/vue.min.js"></script> -->
+		<script src="js/vant.min.js"></script>
+		<script src="js/common.js"></script>
+		<link rel="stylesheet" href="styles/style.css" />
+		<!-- 引入样式文件 -->
+		<link rel="stylesheet" href="styles/vant.css" />
+	</head>
+
+	<body>
+		<div id="app">
+			<div>
+				<van-nav-bar :title="title" left-arrow left-text="返回" @click-left="backLast" />
+			</div>
+			<div>
+				<van-cell value="检查频率：每天开班；断电开机；设备维修后；检查方法：使用测温仪分别测量上模、下模、预热台，4个模盒测量5个点。" />
+			</div>
+			<div>
+				<van-field v-model="formData.time" label="日期时间" input-align="right" placeholder="请输入" ref="filed1"
+					required :error-message="errorMsg1" error-message-align="right" />
+			</div>
+			<div id='no'>
+				<van-field v-model="formData.locationCode" label="机台号" input-align="right" placeholder="请输入或扫描设备"
+					ref="filed0" autofocus required :error-message="errorMsg1" error-message-align="right"
+					@keyup.enter.native="onEnter(1)" />
+			</div>
+
+			<!-- 上模温 -->
+			<div>
+				<van-row id="size" class="flex-container">
+					<van-col span="4"
+						style="display: flex; justify-content: center; align-items: center; writing-mode: vertical-rl; text-orientation: upright;">
+						上模温
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field required v-model="formData.upperMold.temp1" label="实测温度1" input-align="right"
+								placeholder="输入..." ref="filed3"
+								:style="{ backgroundColor: getTempBgColor('upper', formData.upperMold.temp1)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.upperMold.temp2" label="实测温度2" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('upper', formData.upperMold.temp2)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.upperMold.temp3" label="实测温度3" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('upper', formData.upperMold.temp3)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.upperMold.temp4" label="实测温度4" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('upper', formData.upperMold.temp4)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.upperMold.temp5" label="实测温度5" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('upper', formData.upperMold.temp5)  }" />
+						</van-row>
+					</van-col>
+				</van-row>
+			</div>
+			<div>
+				<br>
+			</div>
+
+			<!-- 下模温 -->
+			<div>
+				<van-row id="size" class="flex-container">
+					<van-col span="4"
+						style="display: flex; justify-content: center; align-items: center; writing-mode: vertical-rl; text-orientation: upright;">
+						下模温
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field required v-model="formData.lowerMold.temp1" label="实测温度1" input-align="right"
+								placeholder="输入..." ref="filed3"
+								:style="{ backgroundColor: getTempBgColor('lower', formData.lowerMold.temp1)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.lowerMold.temp2" label="实测温度2" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('lower', formData.lowerMold.temp2)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.lowerMold.temp3" label="实测温度3" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('lower', formData.lowerMold.temp3)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.lowerMold.temp4" label="实测温度4" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('lower', formData.lowerMold.temp4)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.lowerMold.temp5" label="实测温度5" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('lower', formData.lowerMold.temp5)  }" />
+						</van-row>
+					</van-col>
+				</van-row>
+			</div>
+			<div>
+				<br>
+			</div>
+
+			<!-- 预热台 -->
+			<div>
+				<van-row id="size" class="flex-container">
+					<van-col span="4"
+						style="display: flex; justify-content: center; align-items: center; writing-mode: vertical-rl; text-orientation: upright;">
+						预热台
+					</van-col>
+					<van-col span="19" class="flex-field-col">
+						<van-row>
+							<van-field required v-model="formData.preheating.temp1" label="实测温度1" input-align="right"
+								placeholder="输入..." ref="filed3"
+								:style="{ backgroundColor: getTempBgColor('preheat', formData.preheating.temp1)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.preheating.temp2" label="实测温度2" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('preheat', formData.preheating.temp2)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.preheating.temp3" label="实测温度3" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('preheat', formData.preheating.temp3)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.preheating.temp4" label="实测温度4" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('preheat', formData.preheating.temp4)  }" />
+						</van-row>
+						<van-row>
+							<van-field required v-model="formData.preheating.temp5" label="实测温度5" input-align="right"
+								placeholder="输入..."
+								:style="{ backgroundColor: getTempBgColor('preheat', formData.preheating.temp5)  }" />
+						</van-row>
+					</van-col>
+				</van-row>
+			</div>
+
+			<div>
+				<van-field label="判定" input-align="right">
+					<template #input>
+						<van-radio-group v-model="formData.judgment" direction="horizontal">
+							<van-radio name="OK">OK</van-radio>
+							<van-radio name="NG">NG</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+
+			<div class='no'>
+				<van-field v-model="formData.qc" label="录入人" input-align="right" placeholder="请输入"
+					@keyup.enter.native="onEnter(1)" autofocus ref="filed1" required :error-message="errorMsg1"
+					error-message-align="right" />
+			</div>
+
+			<div class='no'>
+				<van-field v-model="formData.remark" label="备注" input-align="right" placeholder="请输入" />
+			</div>
+
+			<van-tag type="success" size="large">{{tag}}</van-tag>
+
+			<div class="btm_btn">
+				<van-row>
+					<van-col span="10">
+						<van-button type="info" color="#ccc" block square @click="reset">重置</van-button>
+					</van-col>
+					<van-col span="14">
+						<van-button type="info" block square @click="save">{{btnName}}</van-button>
+					</van-col>
+				</van-row>
+			</div>
+		</div>
+
+		<script>
+		
+			// 必须放在最前面！！！
+			Vue.config.devtools = true;
+			Vue.config.productionTip = false;
+			
+			new Vue({
+				el: '#app',
+				data: {
+					title: 'IC塑封站工艺参数点检表',
+					btnName: '确认',
+					showPicker: false,
+					columns: [],
+					errorMsg1: "",
+					errorMsg2: "",
+					tag: "No:JDW-WI-Q-Q007-02(c)",
+					// 温度规格配置
+					tempSpecs: {
+						upper: {
+							lower: 170,
+							upper: 180
+						}, // 上下模温规格
+						lower: {
+							lower: 170,
+							upper: 180
+						},
+						preheat: {
+							lower: 140,
+							upper: 170
+						} // 预热台规格
+					},
+					// 重构表单数据结构，与页面label一一对应
+					formData: {
+						time: "",
+						locationCode: "", // 机台号
+						materialContent: "", // 条码内容
+						package: "",
+						qc: "", // 录入人
+						qcCode: "", // 录入人编码
+						judgment: "", // 判定
+						remark: "", // 备注
+						// 上模温
+						upperMold: {
+							temp1: '',
+							temp2: '',
+							temp3: '',
+							temp4: '',
+							temp5: ''
+						},
+						// 下模温
+						lowerMold: {
+							temp1: '',
+							temp2: '',
+							temp3: '',
+							temp4: '',
+							temp5: ''
+						},
+						// 预热台
+						preheating: {
+							temp1: '',
+							temp2: '',
+							temp3: '',
+							temp4: '',
+							temp5: ''
+						}
+					}
+				},
+				mounted: function() {
+					this.getNowTime();
+					this.formData.qcCode = localStorage.userCode || "";
+					this.formData.qc = localStorage.userName || "";
+				},
+				created() {
+					var type = getQueryVariable('type');
+					var materialContent = getQueryVariable('CardID') || "";
+					var locationCode = getQueryVariable('EquipmentCode') || "";
+
+					if (locationCode) {
+						this.formData.materialContent = materialContent;
+						this.formData.locationCode = locationCode;
+					}
+				},
+				methods: {
+					// 表单校验方法
+					validateForm() {
+						// 校验必填项
+						if (!this.formData.time) {
+							this.$toast('请填写日期时间');
+							return false;
+						}
+						if (!this.formData.locationCode) {
+							this.$toast('请填写机台号');
+							return false;
+						}
+						if (!this.formData.qc) {
+							this.$toast('请填写录入人');
+							return false;
+						}
+
+						// 校验温度字段
+						const checkTempFields = (tempObj, name) => {
+							for (let i = 1; i <= 5; i++) {
+								const tempKey = `temp${i}`;
+								if (!tempObj[tempKey]) {
+									this.$toast(`请填写${name}的实测温度${i}`);
+									return false;
+								}
+								const tempValue = parseFloat(tempObj[tempKey]);
+								if (isNaN(tempValue)) {
+									this.$toast(`${name}的实测温度${i}必须是数字`);
+									return false;
+								}
+							}
+							return true;
+						};
+
+						// 校验上模温
+						if (!checkTempFields(this.formData.upperMold, '上模温')) return false;
+						// 校验下模温
+						if (!checkTempFields(this.formData.lowerMold, '下模温')) return false;
+						// 校验预热台
+						if (!checkTempFields(this.formData.preheating, '预热台')) return false;
+
+						// 校验判定
+						if (!this.formData.judgment) {
+							this.$toast('请选择判定结果');
+							return false;
+						}
+
+						return true;
+					},
+
+					// 获取温度背景色
+					getTempBgColor(type, value) {
+						const num = parseFloat(value);
+						if (isNaN(num)) return 'white';
+
+						const specs = this.tempSpecs[type];
+						if (num < specs.lower || num > specs.upper) {
+							return 'red'; // 超出范围显示红色
+						}
+						return 'white'; // 正常范围显示白色
+					},
+
+					// 获取当前时间
+					getNowTime() {
+						let now = new Date();
+						let year = now.getFullYear();
+						let month = (now.getMonth() + 1).toString().padStart(2, '0');
+						let day = now.getDate().toString().padStart(2, '0');
+						let hours = now.getHours().toString().padStart(2, '0');
+						let minutes = now.getMinutes().toString().padStart(2, '0');
+						let seconds = now.getSeconds().toString().padStart(2, '0');
+						this.formData.time = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					},
+
+					// 返回上一页
+					backLast: function() {
+						window.location.href = "javascript:history.go(-1)";
+					},
+
+					// 提交保存
+					save: function() {
+						var self = this;
+						// 先进行表单校验
+						if (!self.validateForm()) {
+							return;
+						}
+
+						// 构建提交参数
+						var param = {
+							time: self.formData.time,
+							cardID: self.formData.materialContent,
+							equCode: self.formData.locationCode,
+							package: self.formData.package,
+							judgment: self.formData.judgment,
+							qc: self.formData.qc,
+							qcCode: self.formData.qcCode,
+							remark: self.formData.remark,
+							tag: self.tag,
+							// 展开嵌套的温度字段，与后端扁平字段一一对应
+							UpperMoldTemp1: self.formData.upperMold.temp1,
+							UpperMoldTemp2: self.formData.upperMold.temp2,
+							UpperMoldTemp3: self.formData.upperMold.temp3,
+							UpperMoldTemp4: self.formData.upperMold.temp4,
+							UpperMoldTemp5: self.formData.upperMold.temp5,
+
+							LowerMoldTemp1: self.formData.lowerMold.temp1,
+							LowerMoldTemp2: self.formData.lowerMold.temp2,
+							LowerMoldTemp3: self.formData.lowerMold.temp3,
+							LowerMoldTemp4: self.formData.lowerMold.temp4,
+							LowerMoldTemp5: self.formData.lowerMold.temp5,
+
+							PreheatingTemp1: self.formData.preheating.temp1,
+							PreheatingTemp2: self.formData.preheating.temp2,
+							PreheatingTemp3: self.formData.preheating.temp3,
+							PreheatingTemp4: self.formData.preheating.temp4,
+							PreheatingTemp5: self.formData.preheating.temp5
+						};
+
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认提交?',
+						}).then(function() {
+							$.ajax({
+								url: serviceUrl + '/api/pda/Postmoldingstationprocess',
+								type: 'POST',
+								data: param,
+								contentType: "application/x-www-form-urlencoded",
+								dataType: 'json',
+								beforeSend: function(XMLHttpRequest) {
+									XMLHttpRequest.setRequestHeader("token", localStorage.token);
+									XMLHttpRequest.setRequestHeader("secret", localStorage
+										.secret);
+								},
+								success: function(res) {
+									if (res.code == 200) {
+										self.$dialog.alert({
+											title: '提示',
+											message: '操作成功!'
+										}).then(function() {
+											// 提交成功后可以重置表单或跳转
+											self.resetForm();
+										});
+									} else {
+										self.$toast(res.msg);
+									}
+								},
+								error: function() {
+									self.$toast('网络异常');
+								}
+							});
+						}).catch(function() {
+							// 取消提交
+						});
+					},
+
+					// 重置表单
+					reset: function() {
+						var self = this;
+						self.$dialog.confirm({
+							title: '提示',
+							message: '是否确认重置?',
+						}).then(function() {
+							window.location.reload();
+						}).catch(function() {
+							// 取消重置
+						});
+					},
+
+					// 回车事件处理
+					onEnter: function(type) {
+						var self = this;
+						switch (type) {
+							case 0:
+								self.onFocus(type);
+								break;
+							case 1: // 工卡			
+								self.onFocus(type);
+								break;
+							case 2:
+								this.getCardInfo();
+								break;
+							case 4: // 缺陷
+								// 保留原有逻辑
+								break;
+						}
+					},
+
+					// 获取卡号信息
+					getCardInfo() {
+						console.log(this.formData.materialContent);
+						var self = this;
+						$.ajax({
+							url: serviceUrl + '/api/pda/getCardContent',
+							type: 'GET',
+							data: {
+								cardID: self.formData.materialContent,
+								equipmentCode: self.formData.locationCode,
+								type: 24,
+								kind: 1
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res.code == 200) {
+									console.log(res.data);
+									self.errorMsg1 = '';
+									// self.$refs.filed2.focus();
+									self.formData.package = res.data.cardInfo.PackageCode || '';
+								} else {
+									self.$toast(res.msg);
+									// self.$refs.filed2.focus();
+								}
+							},
+							error: function() {
+								self.$toast('网络异常');
+								self.formData.materialContent = '';
+								// self.$refs.filed2.focus();
+							}
+						});
+					},
+
+					// 自动触发焦点聚焦
+					onFocus: function(type) {
+						var self = this;
+						if (type == 0) {
+							self.$refs.filed1.focus();
+						} else if (type == 1) {
+							self.$refs.filed2.focus();
+						}
+					},
+
+					onConfirmPopup(value) {
+						this.showPicker = false;
+					},
+
+					// 删除
+					onDelete: function(type, index) {
+						var self = this;
+						// 保留原有逻辑
+					}
+				}
+			});
+
+		</script>
+
+		<style>
+			.row {
+				display: flex;
+				align-items: center;
+				margin-bottom: 10px;
+			}
+
+			.field-label {
+				margin-right: 10px;
+				margin-right: 16px;
+				font-size: 14px;
+				color: #323233da;
+				line-height: 32px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.flex-container {
+				display: flex;
+				align-items: center;
+			}
+
+			.flex-label-col {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 100px;
+			}
+
+			.flex-field-col {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+			}
+
+			.custom-van-field {
+				background-color: rgb(255, 255, 255);
+				display: inline-flex;
+				justify-content: space-between;
+				width: 100%;
+			}
+		</style>
+	</body>
+
+</html>

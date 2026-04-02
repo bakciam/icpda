@@ -28,24 +28,22 @@
 				<van-cell title="产品区域" is-link arrow-direction="down" required :value="locationname?locationname:'请选择'" @click="showPicker = true" />
 			</div> 
 			<div>
-				<van-field v-model="TH_Code" label="温湿度仪器编号" input-align="right" required/>
+				<van-field v-model="TH_Code" :label-width="180" label="气体检测仪编号" input-align="right" required/>
 			</div>
-			<div>
-				<van-field v-model="Check_Date" label="校准有效期" input-align="right" required/>
-			</div>
+			
 			<div>
 				<van-cell title="班别">
 					<van-radio-group v-model="banbie" direction="horizontal">
-						<van-radio name="A">A</van-radio>
-						<van-radio name="B">B</van-radio>
+						<van-radio name="A">白班</van-radio>
+						<van-radio name="B">夜班</van-radio>
 					</van-radio-group>
 				</van-cell>
 			</div>
 			<div>
-				<van-field v-model="Temperature" label="温度" input-align="right" required/>
+				<van-field v-model="Temperature" label="硫化氢(H₂S)" input-align="right" required/>
 			</div>
 			<div>
-				<van-field v-model="Humidity" label="湿度" input-align="right" required/>
+				<van-field v-model="Humidity" :label-width="180" label="二氧化硫(SO₂)" input-align="right" required/>
 			</div>
 			<div>
 				<van-field v-model="Create_User" label="记录人" input-align="right" placeholder="请输入工号"
@@ -94,7 +92,7 @@
 			el: '#app',
 			data: {
 				showPicker:false,
-				title: '温湿度点检',
+				title: '空气质量点检',
 				TH_Code: '',//工卡
 				Check_Date: '',//标签
 				Temperature: "",
@@ -129,10 +127,6 @@
 						self.$toast('请先输入温湿度仪器编号');
 						return;
 					}
-					if (self.Check_Date == undefined || self.Check_Date == '') {
-						self.$toast('请先输入校准有效期');
-						return;
-					}
 					if (self.banbie == undefined || self.banbie == '') {
 						self.$toast('请先选择班别');
 						return;
@@ -142,11 +136,11 @@
 						return;
 					}
 					if (self.Temperature == undefined || self.Temperature == '') {
-						self.$toast('请先输入温度');
+						self.$toast('请先输入H₂S');
 						return;
 					}
 					if (self.Humidity == undefined || self.Humidity == '') {
-						self.$toast('请先输入湿度');
+						self.$toast('请先输入SO₂');
 						return;
 					}
 					if (self.Create_User == undefined || self.Create_User == '') {
@@ -159,7 +153,6 @@
 					}
 					var param = {
 						TH_Code: self.TH_Code,
-						Check_Date: self.Check_Date,
 						Temperature: self.Temperature,
 						Humidity: self.Humidity,
 						Create_User: self.Create_User,
@@ -177,7 +170,7 @@
 						message: '是否确认提交?',
 					}).then(function () {
 						$.ajax({
-							url: serviceUrl + '/api/pda/tHInspectionSubmit',
+							url: serviceUrl + '/api/pda/aQInspectionSubmit',
 							type: 'POST',
 							data: param,
 							contentType: "application/x-www-form-urlencoded",
@@ -193,7 +186,6 @@
 										message: '操作成功!'
 									}).then(function () {
 										self.TH_Code = '';
-										self.Check_Date = '';
 										self.Temperature = '';
 										self.Humidity = '';
 										self.Create_User = '';
@@ -228,7 +220,6 @@
 						message: '是否确认重置?',
 					}).then(function () {
 						self.TH_Code = '';
-						self.Check_Date = '';
 						self.Temperature = '';
 						self.Humidity = '';
 						self.Create_User = '';

@@ -1,17 +1,40 @@
-# Android 无关文件（不上传）
+# ========== Android / Gradle：构建产物与本地环境 ==========
 .gradle/
-.idea/
-.svn/
-build/
+**/build/
 local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+
+# 编译与打包输出
+*.apk
+*.aab
+*.aar
+*.ap_
+*.dex
+*.class
+
+# Release 符号与混淆
+*.map
+mapping.txt
+seeds.txt
+usage.txt
+
+# ========== IDE ==========
+.idea/
 *.iml
-import-summary.txt
-gapk.jks
+
+# ========== 日志与系统 ==========
+*.log
+.DS_Store
+Thumbs.db
+
+# ========== 本项目：本地依赖与密钥（按需保留）==========
 DataCollectionLib/
 Sdk/
-BarcodeExample.iml
-gradle/
-gradlew
-gradlew.bat
-settings.gradle
-build.gradle
+gapk.jks
+import-summary.txt
+
+# ========== 其他 VCS ==========
+.svn/
