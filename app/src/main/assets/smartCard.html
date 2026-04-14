@@ -1306,6 +1306,25 @@
 								});
 							}
 						}
+
+						if (type == 2) {
+							let specificPromptMessage = '';
+							if (self.basicForm.customerCode == '606') {
+								specificPromptMessage = '士兰微产品前后空是否设置为60/90';
+							} else {
+								specificPromptMessage = '前后空是否设置为20/80';
+							}
+
+							try {
+								await self.$dialog.confirm({
+									title: '提示',
+									message: specificPromptMessage,
+								});
+							} catch (e) {
+								return;
+							}
+						}
+
 						// 1. 超时判断
 						if (this.isOver12Hours) {
 							try {

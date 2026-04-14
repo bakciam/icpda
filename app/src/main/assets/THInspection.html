@@ -61,16 +61,10 @@
 			<div>
 				<van-cell title="确认人" v-model="Modify_UserName" />
 			</div>
-			<div>
-				<van-field v-model="Remark" label="报警记录" input-align="right"/>
-			</div>
-			<div>
-				<van-field v-model="Check_User" label="处理人" input-align="right" placeholder="请输入工号"
-					@keyup.enter.native="onEnter(3)"/>
-			</div>
-			<div>
-				<van-cell title="处理人" v-model="Check_UserName" />
-			</div>
+			<van-field v-model="Remark" label="报警记录" input-align="right"></van-field>
+			<van-field v-model="Check_User" label="处理人" input-align="right" placeholder="请输入工号"
+				@keyup.enter.native="onEnter(3)"></van-field>
+			<van-cell title="处理人" :value="Check_UserName"></van-cell>
 		</div>
 
 		<div class="btm_btn">

@@ -91,6 +91,12 @@
 								error-message-align="right" type='number'
 								:style="{ backgroundColor: istestDataOfRange(testData3) ? 'red' : 'white' }" />
 						</van-row>
+						<van-row>
+							<van-field :value="testDataMean" label="均值" input-align="right" readonly placeholder="自动计算" />
+						</van-row>
+						<van-row>
+							<van-field :value="testDataRange" label="极差" input-align="right" readonly placeholder="自动计算" />
+						</van-row>
 
 
 					</van-col>
@@ -170,6 +176,27 @@
 					testData1: '',
 
 				},
+				computed: {
+					testDataMean: function() {
+						let count = 0;
+						let sum = 0;
+						if (this.testData1 !== '' && this.testData1 != null) { count++; sum += parseFloat(this.testData1); }
+						if (this.testData2 !== '' && this.testData2 != null) { count++; sum += parseFloat(this.testData2); }
+						if (this.testData3 !== '' && this.testData3 != null) { count++; sum += parseFloat(this.testData3); }
+						if (count === 0) return '';
+						return (sum / count).toFixed(2);
+					},
+					testDataRange: function() {
+						let arr = [];
+						if (this.testData1 !== '' && this.testData1 != null) arr.push(parseFloat(this.testData1));
+						if (this.testData2 !== '' && this.testData2 != null) arr.push(parseFloat(this.testData2));
+						if (this.testData3 !== '' && this.testData3 != null) arr.push(parseFloat(this.testData3));
+						if (arr.length < 2) return '';
+						let max = Math.max(...arr);
+						let min = Math.min(...arr);
+						return (max - min).toFixed(2);
+					}
+				},
 				//封装好的方法挂载到mounted里面
 				mounted: function(data) {
 					this.getNowTime();
@@ -242,7 +269,9 @@
 							package: self.package,
 							testData1: self.testData1,
 							testData2: self.testData2,
-							testData3: self.testData3
+							testData3: self.testData3,
+							testDataMean: self.testDataMean,
+							testDataRange: self.testDataRange
 						}
 						self.$dialog.confirm({
 							title: '提示',

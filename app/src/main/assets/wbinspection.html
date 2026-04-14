@@ -177,6 +177,37 @@
 				</van-field>
 			</div>
 
+			<div class='no'>
+				<van-field v-model="selfCheckUserCode" label="自检人" input-align="right" placeholder="请输入工号或扫码"
+					@keyup.enter.native="onEnter(6)" ref="filed6" required error-message-align="right"></van-field>
+			</div>
+			<div>
+				<van-cell title="自检人姓名" :value="selfCheckUserName"></van-cell>
+			</div>
+			<div class='no'>
+				<van-field label="班别" input-align="right" required>
+					<template #input>
+						<van-radio-group v-model="banbie" direction="horizontal">
+							<van-radio name="白班">白班</van-radio>
+							<van-radio name="夜班">夜班</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div class='no'>
+				<van-field label="有无换刀" input-align="right" required>
+					<template #input>
+						<van-radio-group v-model="knifeChangeFlag" direction="horizontal">
+							<van-radio name="有">有</van-radio>
+							<van-radio name="无">无</van-radio>
+						</van-radio-group>
+					</template>
+				</van-field>
+			</div>
+			<div class='no'>
+				<van-field v-model="impedanceValue" label="阻抗值" input-align="right" placeholder="请输入阻抗值"
+					error-message-align="right"></van-field>
+			</div>
 
 			<div class='no'>
 				<van-field v-model="status" label="状态" input-align="right" placeholder="请输入"
@@ -284,6 +315,11 @@
 					minDate: new Date(2024, 0, 1),
 					maxDate: new Date(),
 					currentDate: new Date(),
+					selfCheckUserCode: '',
+					selfCheckUserName: '',
+					banbie: '',
+					knifeChangeFlag: '',
+					impedanceValue: '',
 
 				},
 				//封装好的方法挂载到mounted里面
@@ -291,6 +327,8 @@
 					this.getNowTime();
 					this.qcCode = localStorage.userCode;
 					this.qc = localStorage.userName;
+					this.selfCheckUserCode = localStorage.userCode || '';
+					this.selfCheckUserName = localStorage.userName || '';
 
 				},
 				created() {
@@ -391,6 +429,26 @@
 							});
 							return;
 						}
+						if (!self.checklist1 || !self.checklist2 || !self.checklist3 || !self.checklist4) {
+							self.$toast('自检条为必填项，请全部选择');
+							return;
+						}
+						if (!self.CheckResult1 || !self.CheckResult2 || !self.CheckResult3 || !self.CheckResult4) {
+							self.$toast('自检结果为必填项，请全部选择');
+							return;
+						}
+						if (!self.selfCheckUserCode || !self.selfCheckUserName) {
+							self.$toast('请先扫码或输入自检人工号');
+							return;
+						}
+						if (!self.banbie) {
+							self.$toast('请先选择班别');
+							return;
+						}
+						if (!self.knifeChangeFlag) {
+							self.$toast('请先选择有无换刀');
+							return;
+						}
 						var param = {
 							cardID: self.materialContent,
 							equipmentCode: self.locationCode,
@@ -421,6 +479,11 @@
 							pModel: self.pModel,
 							yield: self.yield,
 							status: self.status,
+							selfCheckUserCode: self.selfCheckUserCode,
+							selfCheckUserName: self.selfCheckUserName,
+							banbie: self.banbie,
+							knifeChangeFlag: self.knifeChangeFlag,
+							impedanceValue: self.impedanceValue,
 						}
 						self.$dialog.confirm({
 							title: '提示',
@@ -486,6 +549,11 @@
 							self.CheckResult4 = '';
 							self.showPicker1 = self.showPicker2 = self.showPicker3 = self.showPicker4 =
 							false;
+							self.selfCheckUserCode = localStorage.userCode || '';
+							self.selfCheckUserName = localStorage.userName || '';
+							self.banbie = '';
+							self.knifeChangeFlag = '';
+							self.impedanceValue = '';
 							self.getNowTime();
 						}).catch(function() {
 							// on cancel
@@ -521,10 +589,42 @@
 								}
 								self.txtReason = ''
 								break;
+							case 6:
+								self.getUserByCode();
+								break;
 						}
 					},
 
 					//获取卡号信息
+					getUserByCode: function() {
+						var self = this;
+						if (!self.selfCheckUserCode) {
+							self.selfCheckUserName = '';
+							return;
+						}
+						$.ajax({
+							url: serviceUrl + '/api/pda/getUser',
+							type: 'GET',
+							data: {
+								userID: self.selfCheckUserCode
+							},
+							contentType: "application/x-www-form-urlencoded",
+							dataType: 'json',
+							beforeSend: function(XMLHttpRequest) {
+								XMLHttpRequest.setRequestHeader("token", localStorage.token);
+								XMLHttpRequest.setRequestHeader("secret", localStorage.secret);
+							},
+							success: function(res) {
+								if (res && res.data) {
+									self.selfCheckUserName = res.data.userName || '';
+								}
+							},
+							error: function() {
+								self.selfCheckUserName = '';
+							}
+						})
+					},
+
 					getCardInfo() {
 						console.log(this.materialContent);
 						var self = this;
